@@ -190,7 +190,7 @@ TEST_SUITE("comparison") {
         auto s_nfd = string::from_utf8_unchecked(nfd);
         CHECK_FALSE(s_nfc == s_nfd);
         // But equals_normalized should treat them as equal
-        // CHECK(s_nfc.equals_normalized(s_nfd));  // TODO: enable once normalize() is wired
+        CHECK(s_nfc.equals_normalized(s_nfd));
     }
 
 }
@@ -226,3 +226,19 @@ TEST_SUITE("raw access") {
 
 // static_assert(!requires(string s){ s[0]; }, "operator[] must be deleted");
 // Uncomment the line above when building with C++20 concepts enabled.
+
+TEST_SUITE("codepoint_iterator") {
+    TEST_CASE("decode basic") {
+        auto s = string::from_utf8_unchecked("a\xc3\xa9\xe3\x81\x93\xf0\x9f\x98\x80"); // 'a', 'é', 'こ', '😀'
+        auto it = s.codepoints().begin();
+        CHECK(*it == 'a');
+        ++it;
+        CHECK(*it == 0x00E9);
+        ++it;
+        CHECK(*it == 0x3053);
+        ++it;
+        CHECK(*it == 0x1F600);
+        ++it;
+        CHECK(it == s.codepoints().end());
+    }
+}

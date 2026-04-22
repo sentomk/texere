@@ -102,7 +102,32 @@ public:
     void set_base(const char* base) noexcept { base_ = base; }
 
 private:
-    void decode() noexcept; ///< TODO: implement UTF-8 decoding
+    void decode() noexcept {
+        if (ptr_ == end_) {
+            advance_ = 0;
+            current_ = 0;
+            return;
+        }
+        const unsigned char* p = reinterpret_cast<const unsigned char*>(ptr_);
+        const unsigned char* e = reinterpret_cast<const unsigned char*>(end_);
+        unsigned char c = p[0];
+        if (c <= 0x7F) {
+            current_ = c;
+            advance_ = 1;
+        } else if ((c & 0xE0) == 0xC0 && e - p >= 2) {
+            current_ = ((c & 0x1F) << 6) | (p[1] & 0x3F);
+            advance_ = 2;
+        } else if ((c & 0xF0) == 0xE0 && e - p >= 3) {
+            current_ = ((c & 0x0F) << 12) | ((p[1] & 0x3F) << 6) | (p[2] & 0x3F);
+            advance_ = 3;
+        } else if ((c & 0xF8) == 0xF0 && e - p >= 4) {
+            current_ = ((c & 0x07) << 18) | ((p[1] & 0x3F) << 12) | ((p[2] & 0x3F) << 6) | (p[3] & 0x3F);
+            advance_ = 4;
+        } else {
+            current_ = 0xFFFD;
+            advance_ = 1;
+        }
+    }
 
     const char* ptr_{nullptr};
     const char* end_{nullptr};

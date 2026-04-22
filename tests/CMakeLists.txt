@@ -20,7 +20,7 @@ endif()
 # ============================================================================
 # Test executable
 # ============================================================================
-add_executable(texere_tests test_string.cpp)
+add_executable(texere_tests test_string.cpp test_algorithms.cpp)
 
 target_link_libraries(texere_tests PRIVATE
     texere::texere
