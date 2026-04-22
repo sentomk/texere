@@ -1,3 +1,10 @@
+// Copyright 2026 The texere Authors.
+//
+// Licensed under the MIT License.
+//
+// File: test_algorithms.cpp
+// Description: Core implementation and declarations for texere.
+
 #include <doctest/doctest.h>
 
 #include <texere/string.hpp>

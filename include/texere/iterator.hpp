@@ -1,5 +1,12 @@
 #pragma once
 
+// Copyright 2026 The texere Authors.
+//
+// Licensed under the MIT License.
+//
+// File: iterator.hpp
+// Description: Core implementation and declarations for texere.
+
 #include "grapheme.hpp"
 
 #include <cstddef>
@@ -17,7 +24,7 @@ class string_view;
 // byte_iterator  –  iterates over raw UTF-8 bytes
 // ===========================================================================
 
-/// @brief Input iterator over the raw UTF-8 bytes of a txt::string / string_view.
+// Input iterator over the raw UTF-8 bytes of a txt::string / string_view.
 class byte_iterator {
 public:
     using iterator_category = std::bidirectional_iterator_tag;
@@ -45,7 +52,7 @@ private:
     const std::uint8_t* ptr_{nullptr};
 };
 
-/// @brief Range adaptor that provides begin/end byte_iterators.
+// Range adaptor that provides begin/end byte_iterators.
 class byte_range {
 public:
     byte_range(const char* data, std::size_t size) noexcept
@@ -63,11 +70,11 @@ private:
 // codepoint_iterator  –  iterates over Unicode scalar values (code points)
 // ===========================================================================
 
-/// @brief Forward iterator over Unicode code points (char32_t) decoded from UTF-8.
-///
-/// Ill-formed sequences yield U+FFFD (replacement character) per the
-/// "best-fit" substitution strategy; use from_utf8() if you need strict
-/// validation instead.
+// Forward iterator over Unicode code points (char32_t) decoded from UTF-8.
+//
+// Ill-formed sequences yield U+FFFD (replacement character) per the
+// "best-fit" substitution strategy; use from_utf8() if you need strict
+// validation instead.
 class codepoint_iterator {
 public:
     using iterator_category = std::forward_iterator_tag;
@@ -94,7 +101,7 @@ public:
     bool operator==(const codepoint_iterator& o) const noexcept { return ptr_ == o.ptr_; }
     bool operator!=(const codepoint_iterator& o) const noexcept { return ptr_ != o.ptr_; }
 
-    /// @brief The byte Index of the current code point's first byte.
+    // The byte Index of the current code point's first byte.
     [[nodiscard]] Index index() const noexcept {
         return Index(static_cast<std::size_t>(ptr_ - base_));
     }
@@ -136,7 +143,7 @@ private:
     int         advance_{0};
 };
 
-/// @brief Range adaptor for code-point iteration.
+// Range adaptor for code-point iteration.
 class codepoint_range {
 public:
     codepoint_range(const char* data, std::size_t size) noexcept
@@ -162,13 +169,13 @@ private:
 // grapheme_iterator  –  iterates over Unicode grapheme clusters
 // ===========================================================================
 
-/// @brief Forward iterator over Unicode grapheme clusters.
-///
-/// Each dereference returns a grapheme_ref – a lightweight, non-owning view
-/// of the UTF-8 bytes that form a single user-perceived character.
-///
-/// Cluster boundaries are determined according to Unicode Standard Annex #29
-/// (Unicode 15.1).
+// Forward iterator over Unicode grapheme clusters.
+//
+// Each dereference returns a grapheme_ref – a lightweight, non-owning view
+// of the UTF-8 bytes that form a single user-perceived character.
+//
+// Cluster boundaries are determined according to Unicode Standard Annex #29
+// (Unicode 15.1).
 class grapheme_iterator {
 public:
     using iterator_category = std::forward_iterator_tag;
@@ -200,8 +207,8 @@ public:
     bool operator!=(const grapheme_iterator& o) const noexcept { return ptr_ != o.ptr_; }
 
 private:
-    /// @brief Advance cluster_end_ past the current grapheme cluster.
-    /// TODO: implement UAX #29 grapheme cluster boundary algorithm.
+    // Advance cluster_end_ past the current grapheme cluster.
+    // TODO: implement UAX #29 grapheme cluster boundary algorithm.
     void find_cluster_end() noexcept {
         if (ptr_ == end_) {
             cluster_end_ = end_;
@@ -254,7 +261,7 @@ private:
     const char* cluster_end_{nullptr};
 };
 
-/// @brief Range adaptor for grapheme-cluster iteration.
+// Range adaptor for grapheme-cluster iteration.
 class grapheme_range {
 public:
     grapheme_range(const char* data, std::size_t size) noexcept

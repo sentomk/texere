@@ -1,8 +1,15 @@
-/// @file bench_string.cpp
-/// @brief Micro-benchmarks for txt::string core operations.
-///
-/// Build with TEXERE_BUILD_BENCHMARKS=ON, then run:
-///   ./texere_bench --benchmark_format=json
+// Copyright 2026 The texere Authors.
+//
+// Licensed under the MIT License.
+//
+// File: bench_string.cpp
+// Description: Core implementation and declarations for texere.
+
+// @file bench_string.cpp
+// Micro-benchmarks for txt::string core operations.
+//
+// Build with TEXERE_BUILD_BENCHMARKS=ON, then run:
+//   ./texere_bench --benchmark_format=json
 
 #include <benchmark/benchmark.h>
 #include <texere/string.hpp>

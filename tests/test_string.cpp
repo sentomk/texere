@@ -1,10 +1,17 @@
-/// @file test_string.cpp
-/// @brief Basic test suite for txt::string.
-///
-/// Uses doctest (https://github.com/doctest/doctest) – single-header,
-/// zero-friction, no macro collisions.
-///
-/// Run: ctest --test-dir build -V
+// Copyright 2026 The texere Authors.
+//
+// Licensed under the MIT License.
+//
+// File: test_string.cpp
+// Description: Core implementation and declarations for texere.
+
+// @file test_string.cpp
+// Basic test suite for txt::string.
+//
+// Uses doctest (https://github.com/doctest/doctest) – single-header,
+// zero-friction, no macro collisions.
+//
+// Run: ctest --test-dir build -V
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>

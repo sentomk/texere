@@ -1,5 +1,12 @@
 #pragma once
 
+// Copyright 2026 The texere Authors.
+//
+// Licensed under the MIT License.
+//
+// File: expected.hpp
+// Description: Core implementation and declarations for texere.
+
 #include <cstdint>
 #include <string>
 #include <type_traits>
@@ -13,11 +20,11 @@ namespace txt {
 // once the project adopts C++23.  Only the subset actually used by texere is
 // implemented here.
 
-/// @brief Sentinel tag for constructing an expected in the error state.
+// Sentinel tag for constructing an expected in the error state.
 struct unexpect_t { explicit unexpect_t() = default; };
 inline constexpr unexpect_t unexpect{};
 
-/// @brief Wraps an error value for passing to expected's error constructor.
+// Wraps an error value for passing to expected's error constructor.
 template <class E>
 class unexpected {
 public:
@@ -35,10 +42,10 @@ unexpected<std::decay_t<E>> make_unexpected(E&& e) {
 
 // ---------------------------------------------------------------------------
 
-/// @brief A value-or-error type (subset of std::expected, C++17-compatible).
-///
-/// @tparam T  Value type (must be movable).
-/// @tparam E  Error type (must be movable).
+// A value-or-error type (subset of std::expected, C++17-compatible).
+//
+// @tparam T  Value type (must be movable).
+// @tparam E  Error type (must be movable).
 template <class T, class E>
 class expected {
 public:
@@ -47,15 +54,15 @@ public:
 
     // --- constructors ---
 
-    /// Construct in the value state.
+    // Construct in the value state.
     expected(T v) : has_value_(true) { new (&storage_.value) T(std::move(v)); }
 
-    /// Construct in the error state via unexpected<E>.
+    // Construct in the error state via unexpected<E>.
     expected(unexpected<E> u) : has_value_(false) {
         new (&storage_.error) E(std::move(u).value());
     }
 
-    /// Construct in the error state directly (unexpect tag).
+    // Construct in the error state directly (unexpect tag).
     template <class... Args>
     expected(unexpect_t, Args&&... args) : has_value_(false) {
         new (&storage_.error) E(std::forward<Args>(args)...);
@@ -113,20 +120,20 @@ private:
 // Error type used by texere factory functions
 // ---------------------------------------------------------------------------
 
-/// @brief Categories of UTF-8 / conversion errors reported by texere.
+// Categories of UTF-8 / conversion errors reported by texere.
 enum class errc : std::uint8_t {
     ok              = 0,
-    invalid_utf8    = 1,  ///< Input contains ill-formed UTF-8 sequences.
-    truncated_input = 2,  ///< Input ends in the middle of a multi-byte sequence.
-    surrogate_pair  = 3,  ///< Input contains lone UTF-16 surrogates (U+D800–U+DFFF).
-    out_of_range    = 4,  ///< Code point value exceeds U+10FFFF.
-    conversion_fail = 5,  ///< Generic conversion failure (e.g. wstring round-trip).
+    invalid_utf8    = 1,  //< Input contains ill-formed UTF-8 sequences.
+    truncated_input = 2,  //< Input ends in the middle of a multi-byte sequence.
+    surrogate_pair  = 3,  //< Input contains lone UTF-16 surrogates (U+D800–U+DFFF).
+    out_of_range    = 4,  //< Code point value exceeds U+10FFFF.
+    conversion_fail = 5,  //< Generic conversion failure (e.g. wstring round-trip).
 };
 
-/// @brief Error value returned by texere factory functions.
+// Error value returned by texere factory functions.
 struct error {
     errc        code{errc::ok};
-    std::size_t byte_position{0}; ///< Byte offset of the first offending byte.
+    std::size_t byte_position{0}; //< Byte offset of the first offending byte.
 
     [[nodiscard]] bool ok() const noexcept { return code == errc::ok; }
     [[nodiscard]] const char* message() const noexcept {
