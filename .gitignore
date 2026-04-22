@@ -56,3 +56,4 @@ out/
 *.swo
 *~
 .DS_Store
+.cache
