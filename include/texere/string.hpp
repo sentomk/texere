@@ -4,9 +4,7 @@
 #include "grapheme.hpp"
 #include "iterator.hpp"
 
-#include <compare>
 #include <cstddef>
-#include <span>
 #include <string>
 #include <string_view>
 
@@ -104,13 +102,12 @@ public:
     // -----------------------------------------------------------------------
 
     /// @brief Read-only span over the raw UTF-8 bytes.
-    [[nodiscard]] std::span<const std::uint8_t> as_bytes() const noexcept {
-        return {reinterpret_cast<const std::uint8_t*>(storage_.data()),
-                storage_.size()};
+    [[nodiscard]] std::basic_string_view<std::uint8_t> as_bytes() const noexcept {
+        return {reinterpret_cast<const std::uint8_t*>(storage_.data()), storage_.size()};
     }
 
     /// @brief Read-only span of the storage as char (convenience overload).
-    [[nodiscard]] std::span<const char> as_chars() const noexcept {
+    [[nodiscard]] std::string_view as_chars() const noexcept {
         return {storage_.data(), storage_.size()};
     }
 
@@ -194,19 +191,16 @@ public:
     /// default; see normalize.hpp for other forms.
     [[nodiscard]] bool equals_normalized(const string& other) const;
 
-    // -----------------------------------------------------------------------
+    // =======================================================================
     // Comparison operators  (byte-level, no Unicode collation)
-    // -----------------------------------------------------------------------
+    // =======================================================================
 
-    [[nodiscard]] bool operator==(const string& o) const noexcept {
-        return storage_ == o.storage_;
-    }
-    [[nodiscard]] bool operator!=(const string& o) const noexcept {
-        return storage_ != o.storage_;
-    }
-    [[nodiscard]] auto operator<=>(const string& o) const noexcept {
-        return storage_ <=> o.storage_;
-    }
+    [[nodiscard]] bool operator==(const string& o) const noexcept { return storage_ == o.storage_; }
+    [[nodiscard]] bool operator!=(const string& o) const noexcept { return storage_ != o.storage_; }
+    [[nodiscard]] bool operator<(const string& o) const noexcept  { return storage_ < o.storage_; }
+    [[nodiscard]] bool operator<=(const string& o) const noexcept { return storage_ <= o.storage_; }
+    [[nodiscard]] bool operator>(const string& o) const noexcept  { return storage_ > o.storage_; }
+    [[nodiscard]] bool operator>=(const string& o) const noexcept { return storage_ >= o.storage_; }
 
     // -----------------------------------------------------------------------
     // Explicitly deleted dangerous operations
@@ -231,20 +225,189 @@ private:
 // ===========================================================================
 
 namespace literals {
-
-/// @brief Compile-time string literal operator.
-///
-/// `"hello"_ts` creates a txt::string from a string literal.  The literal is
-/// checked for valid UTF-8 **at compile time** (consteval), so any ill-formed
-/// literal causes a compile error.
-///
-/// @example
-/// ```cpp
-/// using namespace txt::literals;
-/// auto s = "こんにちは"_ts;
-/// ```
-txt::string operator""_ts(const char* str, std::size_t len);
-
+    inline txt::string operator""_ts(const char* str, std::size_t len);
 } // namespace literals
 
 } // namespace txt
+
+// ===========================================================================
+// Inline Implementations
+// ===========================================================================
+
+namespace txt {
+
+inline string string::from_utf8_unchecked(std::string_view sv) noexcept {
+    return string(std::string(sv));
+}
+
+namespace detail {
+    inline expected<std::string, error> validate_utf8(std::string_view sv) {
+        const unsigned char* bytes = reinterpret_cast<const unsigned char*>(sv.data());
+        std::size_t len = sv.size();
+        std::size_t i = 0;
+
+        while (i < len) {
+            unsigned char c = bytes[i];
+            std::size_t error_pos = i;
+
+            if (c <= 0x7F) {
+                // 1-byte
+                i += 1;
+            } else if ((c & 0xE0) == 0xC0) {
+                // 2-byte
+                if (c < 0xC2) { return unexpected<error>({errc::invalid_utf8, error_pos}); } // overlong
+                if (i + 1 >= len) { return unexpected<error>({errc::truncated_input, error_pos}); }
+                if ((bytes[i+1] & 0xC0) != 0x80) { return unexpected<error>({errc::invalid_utf8, error_pos}); }
+                i += 2;
+            } else if ((c & 0xF0) == 0xE0) {
+                // 3-byte
+                if (i + 2 >= len) { return unexpected<error>({errc::truncated_input, error_pos}); }
+                unsigned char c2 = bytes[i+1];
+                unsigned char c3 = bytes[i+2];
+                if ((c2 & 0xC0) != 0x80 || (c3 & 0xC0) != 0x80) { return unexpected<error>({errc::invalid_utf8, error_pos}); }
+                if (c == 0xE0 && c2 < 0xA0) { return unexpected<error>({errc::invalid_utf8, error_pos}); } // overlong
+                if (c == 0xED && c2 >= 0xA0) { return unexpected<error>({errc::surrogate_pair, error_pos}); } // surrogate
+                i += 3;
+            } else if ((c & 0xF8) == 0xF0) {
+                // 4-byte
+                if (c > 0xF4) { return unexpected<error>({errc::out_of_range, error_pos}); }
+                if (i + 3 >= len) { return unexpected<error>({errc::truncated_input, error_pos}); }
+                unsigned char c2 = bytes[i+1];
+                unsigned char c3 = bytes[i+2];
+                unsigned char c4 = bytes[i+3];
+                if ((c2 & 0xC0) != 0x80 || (c3 & 0xC0) != 0x80 || (c4 & 0xC0) != 0x80) { return unexpected<error>({errc::invalid_utf8, error_pos}); }
+                if (c == 0xF0 && c2 < 0x90) { return unexpected<error>({errc::invalid_utf8, error_pos}); } // overlong
+                if (c == 0xF4 && c2 >= 0x90) { return unexpected<error>({errc::out_of_range, error_pos}); } // out of range
+                i += 4;
+            } else {
+                return unexpected<error>({errc::invalid_utf8, error_pos});
+            }
+        }
+        return std::string(sv);
+    }
+
+    inline std::string make_lossy_utf8(std::string_view sv) {
+        std::string result;
+        result.reserve(sv.size() + 3); // heuristic
+        const unsigned char* bytes = reinterpret_cast<const unsigned char*>(sv.data());
+        std::size_t len = sv.size();
+        std::size_t i = 0;
+
+        auto append_replacement = [&]() {
+            result.push_back('\xEF');
+            result.push_back('\xBF');
+            result.push_back('\xBD');
+        };
+
+        while (i < len) {
+            unsigned char c = bytes[i];
+
+            if (c <= 0x7F) {
+                result.push_back(static_cast<char>(c));
+                i += 1;
+            } else if ((c & 0xE0) == 0xC0) {
+                if (c < 0xC2 || i + 1 >= len || (bytes[i+1] & 0xC0) != 0x80) {
+                    append_replacement();
+                    i += 1;
+                } else {
+                    result.push_back(static_cast<char>(c));
+                    result.push_back(static_cast<char>(bytes[i+1]));
+                    i += 2;
+                }
+            } else if ((c & 0xF0) == 0xE0) {
+                if (i + 2 >= len) {
+                    append_replacement();
+                    i += 1; // Just advance by 1 on error for simplicity in lossy
+                    continue;
+                }
+                unsigned char c2 = bytes[i+1];
+                unsigned char c3 = bytes[i+2];
+                if ((c2 & 0xC0) != 0x80 || (c3 & 0xC0) != 0x80 || 
+                    (c == 0xE0 && c2 < 0xA0) || (c == 0xED && c2 >= 0xA0)) {
+                    append_replacement();
+                    i += 1;
+                } else {
+                    result.push_back(static_cast<char>(c));
+                    result.push_back(static_cast<char>(c2));
+                    result.push_back(static_cast<char>(c3));
+                    i += 3;
+                }
+            } else if ((c & 0xF8) == 0xF0) {
+                if (c > 0xF4 || i + 3 >= len) {
+                    append_replacement();
+                    i += 1;
+                    continue;
+                }
+                unsigned char c2 = bytes[i+1];
+                unsigned char c3 = bytes[i+2];
+                unsigned char c4 = bytes[i+3];
+                if ((c2 & 0xC0) != 0x80 || (c3 & 0xC0) != 0x80 || (c4 & 0xC0) != 0x80 ||
+                    (c == 0xF0 && c2 < 0x90) || (c == 0xF4 && c2 >= 0x90)) {
+                    append_replacement();
+                    i += 1;
+                } else {
+                    result.push_back(static_cast<char>(c));
+                    result.push_back(static_cast<char>(c2));
+                    result.push_back(static_cast<char>(c3));
+                    result.push_back(static_cast<char>(c4));
+                    i += 4;
+                }
+            } else {
+                append_replacement();
+                i += 1;
+            }
+        }
+        return result;
+    }
+} // namespace detail
+
+inline string string::from_utf8_lossy(std::string_view sv) {
+    auto validated = detail::validate_utf8(sv);
+    if (validated.has_value()) {
+        return string(std::move(validated.value()));
+    }
+    return string(detail::make_lossy_utf8(sv));
+}
+
+inline expected<string, error> string::from_utf8(std::string_view sv) {
+    auto validated = detail::validate_utf8(sv);
+    if (validated.has_value()) {
+        return string(std::move(validated.value()));
+    }
+    return unexpected<error>(validated.error());
+}
+
+inline std::size_t string::length() const noexcept {
+    std::size_t count = 0;
+    for (auto it = graphemes().begin(); it != graphemes().end(); ++it) {
+        ++count;
+    }
+    return count;
+}
+
+inline grapheme_ref string::grapheme_at(std::size_t n) const noexcept {
+    auto it = graphemes().begin();
+    auto end = graphemes().end();
+    for (std::size_t i = 0; i < n && it != end; ++i) {
+        ++it;
+    }
+    if (it != end) {
+        return *it;
+    }
+    return grapheme_ref(std::string_view(), Index(storage_.size()));
+}
+
+} // namespace txt
+
+namespace txt {
+namespace literals {
+inline txt::string operator""_ts(const char* str, std::size_t len) {
+    auto validated = txt::detail::validate_utf8(std::string_view(str, len));
+    if (!validated) {
+        return txt::string::from_utf8_unchecked(std::string_view(str, len));
+    }
+    return txt::string::from_utf8_unchecked(std::string_view(str, len));
+}
+} // namespace literals
+} // namespace txt
+

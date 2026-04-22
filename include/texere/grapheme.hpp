@@ -17,7 +17,8 @@ public:
     /// @brief Byte offset within the underlying UTF-8 storage.
     [[nodiscard]] std::size_t byte_offset() const noexcept { return offset_; }
 
-    bool operator==(const Index&) const noexcept = default;
+    bool operator==(const Index& o) const noexcept { return offset_ == o.offset_; }
+    bool operator!=(const Index& o) const noexcept { return offset_ != o.offset_; }
     bool operator< (const Index& o) const noexcept { return offset_ < o.offset_; }
     bool operator<=(const Index& o) const noexcept { return offset_ <= o.offset_; }
     bool operator> (const Index& o) const noexcept { return offset_ > o.offset_; }
@@ -27,6 +28,7 @@ private:
     friend class string;
     friend class string_view;
     friend class grapheme_iterator;
+    friend class codepoint_iterator;
 
     explicit Index(std::size_t offset) noexcept : offset_(offset) {}
 
@@ -56,6 +58,8 @@ public:
 
 private:
     friend class grapheme_iterator;
+    friend class string;
+    friend class string_view;
 
     grapheme_ref(std::string_view bytes, Index index) noexcept
         : bytes_(bytes), index_(index) {}

@@ -9,7 +9,13 @@ FetchContent_Declare(doctest
     GIT_TAG        v2.4.11
     GIT_SHALLOW    TRUE
 )
-FetchContent_MakeAvailable(doctest)
+FetchContent_GetProperties(doctest)
+if(NOT doctest_POPULATED)
+    FetchContent_Populate(doctest)
+    add_library(doctest INTERFACE)
+    add_library(doctest::doctest ALIAS doctest)
+    target_include_directories(doctest INTERFACE ${doctest_SOURCE_DIR})
+endif()
 
 # ============================================================================
 # Test executable
@@ -23,5 +29,5 @@ target_link_libraries(texere_tests PRIVATE
 
 target_compile_features(texere_tests PRIVATE cxx_std_17)
 
-include(doctest)
+include(${doctest_SOURCE_DIR}/scripts/cmake/doctest.cmake)
 doctest_discover_tests(texere_tests)

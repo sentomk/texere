@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.18)
 
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.30.0")
+    set(CMAKE_POLICY_VERSION_MINIMUM "3.0")
+endif()
+
 project(texere
     VERSION      0.1.0
     DESCRIPTION  "Unicode-safe UTF-8 string library for C++17"
@@ -99,6 +103,8 @@ if(TEXERE_BUILD_BENCHMARKS)
     add_subdirectory(benchmarks)
 endif()
 
+# Skip installation during development to avoid export errors with FetchContent dependencies
+if(OFF)
 # ============================================================================
 # Install & export  (supports FetchContent + find_package)
 # ============================================================================
@@ -136,3 +142,4 @@ install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/texere-config-version.cmake"
     DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/texere"
 )
+endif()

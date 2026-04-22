@@ -6,7 +6,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <span>
 #include <string_view>
 
 namespace txt {
@@ -63,10 +62,10 @@ public:
     // Raw access
     // -----------------------------------------------------------------------
 
-    [[nodiscard]] std::span<const std::uint8_t> as_bytes() const noexcept {
+    [[nodiscard]] std::basic_string_view<std::uint8_t> as_bytes() const noexcept {
         return {reinterpret_cast<const std::uint8_t*>(sv_.data()), sv_.size()};
     }
-    [[nodiscard]] std::span<const char> as_chars() const noexcept {
+    [[nodiscard]] std::string_view as_chars() const noexcept {
         return {sv_.data(), sv_.size()};
     }
 
@@ -101,7 +100,10 @@ public:
 
     [[nodiscard]] bool operator==(const string_view& o) const noexcept { return sv_ == o.sv_; }
     [[nodiscard]] bool operator!=(const string_view& o) const noexcept { return sv_ != o.sv_; }
-    [[nodiscard]] auto operator<=>(const string_view& o) const noexcept { return sv_ <=> o.sv_; }
+    [[nodiscard]] bool operator<(const string_view& o) const noexcept  { return sv_ < o.sv_; }
+    [[nodiscard]] bool operator<=(const string_view& o) const noexcept { return sv_ <= o.sv_; }
+    [[nodiscard]] bool operator>(const string_view& o) const noexcept  { return sv_ > o.sv_; }
+    [[nodiscard]] bool operator>=(const string_view& o) const noexcept { return sv_ >= o.sv_; }
 
     // -----------------------------------------------------------------------
     // Disabled
@@ -113,5 +115,25 @@ public:
 private:
     std::string_view sv_;
 };
+
+inline std::size_t string_view::length() const noexcept {
+    std::size_t count = 0;
+    for (auto it = graphemes().begin(); it != graphemes().end(); ++it) {
+        ++count;
+    }
+    return count;
+}
+
+inline grapheme_ref string_view::grapheme_at(std::size_t n) const noexcept {
+    auto it = graphemes().begin();
+    auto end = graphemes().end();
+    for (std::size_t i = 0; i < n && it != end; ++i) {
+        ++it;
+    }
+    if (it != end) {
+        return *it;
+    }
+    return grapheme_ref(std::string_view(), Index(sv_.size()));
+}
 
 } // namespace txt
