@@ -129,7 +129,17 @@ struct error {
     std::size_t byte_position{0}; ///< Byte offset of the first offending byte.
 
     [[nodiscard]] bool ok() const noexcept { return code == errc::ok; }
-    [[nodiscard]] const char* message() const noexcept;
+    [[nodiscard]] const char* message() const noexcept {
+        switch (code) {
+            case errc::ok:              return "success";
+            case errc::invalid_utf8:    return "invalid utf-8 sequence";
+            case errc::truncated_input: return "truncated utf-8 sequence";
+            case errc::surrogate_pair:  return "utf-16 surrogate in utf-8 stream";
+            case errc::out_of_range:    return "code point out of range";
+            case errc::conversion_fail: return "conversion failed";
+        }
+        return "unknown error";
+    }
 };
 
 } // namespace txt
