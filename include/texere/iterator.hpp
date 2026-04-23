@@ -209,51 +209,7 @@ public:
 private:
     // Advance cluster_end_ past the current grapheme cluster.
     // TODO: implement UAX #29 grapheme cluster boundary algorithm.
-    void find_cluster_end() noexcept {
-        if (ptr_ == end_) {
-            cluster_end_ = end_;
-            return;
-        }
-
-        const unsigned char* p = reinterpret_cast<const unsigned char*>(ptr_);
-        const unsigned char* e = reinterpret_cast<const unsigned char*>(end_);
-        
-        // Simple heuristic for tests: 
-        // 1. Advance by 1 code point (UTF-8 sequence)
-        auto advance_cp = [](const unsigned char* curr, const unsigned char* end_ptr) -> const unsigned char* {
-            if (curr >= end_ptr) return end_ptr;
-            unsigned char c = *curr;
-            if (c <= 0x7F) return curr + 1;
-            if ((c & 0xE0) == 0xC0) return curr + 2;
-            if ((c & 0xF0) == 0xE0) return curr + 3;
-            if ((c & 0xF8) == 0xF0) return curr + 4;
-            return curr + 1; // fallback
-        };
-
-        p = advance_cp(p, e);
-        
-        // 2. Consume any continuation characters (ZWJ, or combining marks).
-        // ZWJ is E2 80 8D
-        while (p < e) {
-            // Check for ZWJ
-            if (e - p >= 3 && p[0] == 0xE2 && p[1] == 0x80 && p[2] == 0x8D) {
-                p += 3;
-                // ZWJ joins the *next* character, so consume it too!
-                p = advance_cp(p, e);
-                continue;
-            }
-            // Check for some combining marks (e.g. U+0300..U+036F)
-            // UTF-8 for 0300..036F is CC 80 .. CD AF
-            if (e - p >= 2 && ((p[0] == 0xCC) || (p[0] == 0xCD && p[1] <= 0xAF))) {
-                p += 2;
-                continue;
-            }
-            break;
-        }
-        
-        cluster_end_ = reinterpret_cast<const char*>(p);
-        if (cluster_end_ > end_) cluster_end_ = end_;
-    }
+    void find_cluster_end() noexcept;
 
     const char* ptr_{nullptr};
     const char* end_{nullptr};
