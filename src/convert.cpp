@@ -13,9 +13,9 @@ std::wstring to_wstring(const string& s) {
 #ifdef TEXERE_HAS_UNIALGO
     std::string_view sv = s.to_std_string_view();
     if constexpr (sizeof(wchar_t) == 2) {
-        return una::utf8to16<std::wstring>(sv);
+        return una::utf8to16<char, wchar_t>(sv);
     } else {
-        return una::utf8to32<std::wstring>(sv);
+        return una::utf8to32<char, wchar_t>(sv);
     }
 #else
     // Fallback: Just cast if no unialgo, though it's lossy/wrong for non-ASCII
@@ -28,9 +28,9 @@ expected<string, error> from_wstring(std::wstring_view ws) {
 #ifdef TEXERE_HAS_UNIALGO
     std::string res;
     if constexpr (sizeof(wchar_t) == 2) {
-        res = una::utf16to8<std::string>(ws);
+        res = una::utf16to8<wchar_t, char>(ws);
     } else {
-        res = una::utf32to8<std::string>(ws);
+        res = una::utf32to8<wchar_t, char>(ws);
     }
     // utf16to8 returns valid utf8, we can use unchecked
     return string::from_utf8_unchecked(res);
