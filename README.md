@@ -146,4 +146,4 @@ texere/
 
 ## License
 
-MIT — see the LICENSE file (to be added).
+MIT — see the [LICENSE](LICENSE) file.
