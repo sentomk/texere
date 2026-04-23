@@ -17,6 +17,17 @@
 
 ---
 
+## Architecture & Compilation Model
+
+**texere is a compiled library** (Static or Shared), *not* a header-only library.
+
+This deliberate design choice ensures **industrial-grade build performance**:
+1. **Zero Dependency Bleeding**: Heavy backend dependencies (`simdutf`, `uni-algo`) are completely hidden inside `texere`'s `src/` files. Your application's translation units will *never* parse thousands of lines of SIMD intrinsics or Unicode tables.
+2. **Fast Compile Times**: Including `<texere/string.hpp>` is practically as fast as including `<string>`.
+3. **ABI Isolation**: You can upgrade or swap the underlying Unicode engines without recompiling your entire codebase.
+
+---
+
 ## Quick Start
 
 ```cpp

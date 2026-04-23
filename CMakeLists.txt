@@ -62,30 +62,31 @@ endif()
 # ============================================================================
 # texere library target
 # ============================================================================
-add_library(texere INTERFACE)
+file(GLOB TEXERE_SOURCES "src/*.cpp")
+add_library(texere ${TEXERE_SOURCES})
 add_library(texere::texere ALIAS texere)
 
-target_include_directories(texere INTERFACE
+target_include_directories(texere PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
 
-target_compile_features(texere INTERFACE cxx_std_17)
+target_compile_features(texere PUBLIC cxx_std_17)
 
 # Optional dependency linkage
 if(TEXERE_USE_SIMDUTF)
-    target_link_libraries(texere INTERFACE simdutf)
-    target_compile_definitions(texere INTERFACE TEXERE_HAS_SIMDUTF=1)
+    target_link_libraries(texere PRIVATE simdutf)
+    target_compile_definitions(texere PRIVATE TEXERE_HAS_SIMDUTF=1)
 endif()
 
 if(TEXERE_USE_UNIALGO)
-    target_link_libraries(texere INTERFACE uni-algo::uni-algo)
-    target_compile_definitions(texere INTERFACE TEXERE_HAS_UNIALGO=1)
+    target_link_libraries(texere PRIVATE uni-algo::uni-algo)
+    target_compile_definitions(texere PRIVATE TEXERE_HAS_UNIALGO=1)
 endif()
 
 if(TEXERE_USE_FMT)
-    target_link_libraries(texere INTERFACE fmt::fmt)
-    target_compile_definitions(texere INTERFACE TEXERE_HAS_FMT=1)
+    target_link_libraries(texere PUBLIC fmt::fmt)
+    target_compile_definitions(texere PUBLIC TEXERE_HAS_FMT=1)
 endif()
 
 # ============================================================================
