@@ -9,9 +9,6 @@
 
 #include "string.hpp"
 
-#ifdef TEXERE_HAS_UNIALGO
-#include <uni_algo/case.h>
-#endif
 
 namespace txt {
 
@@ -33,25 +30,13 @@ namespace txt {
 //
 // s: Source string.
 // Returns:   New txt::string with every code point uppercased.
-[[nodiscard]] inline string to_upper(const string& s) {
-#ifdef TEXERE_HAS_UNIALGO
-    return string::from_utf8_unchecked(una::cases::to_uppercase_utf8(s.to_std_string_view()));
-#else
-    return s;
-#endif
-}
+[[nodiscard]] string to_upper(const string& s);
 
 // Returns a lowercased copy of `s` (Unicode full case mapping).
 //
 // s: Source string.
 // Returns:   New txt::string with every code point lowercased.
-[[nodiscard]] inline string to_lower(const string& s) {
-#ifdef TEXERE_HAS_UNIALGO
-    return string::from_utf8_unchecked(una::cases::to_lowercase_utf8(s.to_std_string_view()));
-#else
-    return s;
-#endif
-}
+[[nodiscard]] string to_lower(const string& s);
 
 // Returns a title-cased copy of `s`.
 //
@@ -60,13 +45,7 @@ namespace txt {
 //
 // s: Source string.
 // Returns:   New txt::string in title case.
-[[nodiscard]] inline string to_title(const string& s) {
-#ifdef TEXERE_HAS_UNIALGO
-    return string::from_utf8_unchecked(una::cases::to_titlecase_utf8(s.to_std_string_view()));
-#else
-    return s;
-#endif
-}
+[[nodiscard]] string to_title(const string& s);
 
 // Returns a case-folded copy of `s` for case-insensitive comparison.
 //
@@ -75,12 +54,6 @@ namespace txt {
 //
 // s: Source string.
 // Returns:   Case-folded txt::string.
-[[nodiscard]] inline string case_fold(const string& s) {
-#ifdef TEXERE_HAS_UNIALGO
-    return string::from_utf8_unchecked(una::cases::to_casefold_utf8(s.to_std_string_view()));
-#else
-    return s;
-#endif
-}
+[[nodiscard]] string case_fold(const string& s);
 
 } // namespace txt

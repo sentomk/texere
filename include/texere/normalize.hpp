@@ -9,9 +9,6 @@
 
 #include "string.hpp"
 
-#ifdef TEXERE_HAS_UNIALGO
-#include <uni_algo/norm.h>
-#endif
 
 namespace txt {
 
@@ -44,21 +41,7 @@ enum class normalization_form : std::uint8_t {
 // form: The target normalization form (default: NFC).
 // Returns:      New txt::string in the requested form.
 [[nodiscard]]
-inline string normalized(const string& s, normalization_form form = normalization_form::NFC) {
-#ifdef TEXERE_HAS_UNIALGO
-    std::string_view sv = s.to_std_string_view();
-    std::string res;
-    switch (form) {
-        case normalization_form::NFC:  res = una::norm::to_nfc_utf8(sv); break;
-        case normalization_form::NFD:  res = una::norm::to_nfd_utf8(sv); break;
-        case normalization_form::NFKC: res = una::norm::to_nfkc_utf8(sv); break;
-        case normalization_form::NFKD: res = una::norm::to_nfkd_utf8(sv); break;
-    }
-    return string::from_utf8_unchecked(res);
-#else
-    return s; // Fallback: no-op if uni-algo is missing
-#endif
-}
+string normalized(const string& s, normalization_form form = normalization_form::NFC);
 
 // Normalize a txt::string in-place.
 //
