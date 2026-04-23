@@ -69,6 +69,15 @@ bool eq = txt::equals_normalized(a, b);  // does not modify either string
 // Case mapping
 auto upper = txt::to_upper(s);
 auto lower = txt::to_lower(s);
+
+// Windows / wchar_t Interop (if needed)
+#include <texere/convert.hpp>
+std::wstring ws = txt::to_wstring(s);
+
+// {fmt} / std::format ecosystem adapter
+#include <texere/format.hpp>
+fmt::print("Hello, {}! Length is {}.
+", s, s.length());
 ```
 
 ---
@@ -87,9 +96,14 @@ All dependencies are fetched automatically via CMake FetchContent; no manual ins
 
 ## CMake Integration
 
-### Option 1: FetchContent
+### Option 1: FetchContent (Recommended)
+
+`FetchContent` will automatically download and compile `texere` (and its internal dependencies `simdutf` & `uni-algo`) as a static library, ensuring zero dependency configuration on your end.
 
 ```cmake
+# Optional: Enable {fmt} support before fetching
+set(TEXERE_USE_FMT ON CACHE BOOL "" FORCE)
+
 include(FetchContent)
 FetchContent_Declare(texere
     GIT_REPOSITORY https://github.com/yourorg/texere.git
@@ -126,20 +140,25 @@ ctest --test-dir build -V
 
 ```
 texere/
-├── include/texere/
+├── include/texere/      ← Public API headers (clean, zero external dependencies)
 │   ├── string.hpp       ← txt::string (primary type)
 │   ├── string_view.hpp  ← txt::string_view (non-owning view)
-│   ├── grapheme.hpp     ← txt::Index, txt::grapheme_ref
 │   ├── iterator.hpp     ← byte/codepoint/grapheme iterators and ranges
 │   ├── normalize.hpp    ← normalize(), equals_normalized()
 │   ├── case.hpp         ← to_upper(), to_lower(), to_title()
 │   ├── convert.hpp      ← to_wstring(), from_wstring()
+│   ├── format.hpp       ← {fmt} integration (fmt::formatter<txt::string>)
 │   └── expected.hpp     ← C++17-compatible txt::expected<T,E>
-├── tests/               ← doctest test suite
+├── src/                 ← Implementation (hides heavy simdutf & uni-algo headers)
+│   ├── string.cpp       ← High-performance SIMD validation
+│   ├── iterator.cpp     ← UAX #29 Grapheme state machine
+│   ├── normalize.cpp    
+│   ├── case.cpp         
+│   └── convert.cpp      
+├── tests/               ← doctest test suite (100+ tests)
 ├── benchmarks/          ← Google Benchmark micro-benchmarks
-├── docs/
-│   └── design_rationale.md  ← Detailed design decision documentation
-└── CMakeLists.txt
+└── docs/
+    └── design_rationale.md  ← Detailed design decision documentation
 ```
 
 ---
