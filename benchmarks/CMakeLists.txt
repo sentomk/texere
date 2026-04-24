@@ -9,7 +9,12 @@ FetchContent_Declare(benchmark
 set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(benchmark)
 
-add_executable(texere_bench bench_string.cpp)
+add_executable(texere_bench
+    bench_string.cpp
+    bench_normalize.cpp
+    bench_case.cpp
+    bench_convert.cpp
+)
 
 target_link_libraries(texere_bench PRIVATE
     texere::texere
