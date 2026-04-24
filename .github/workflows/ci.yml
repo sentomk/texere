@@ -48,3 +48,69 @@ jobs:
       - name: Test
         run: ctest --test-dir build --build-config Release --output-on-failure
         shell: bash
+
+  coverage:
+    name: Coverage (Linux GCC)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install lcov
+        run: sudo apt-get install -y lcov
+
+      - name: Configure
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_FLAGS="--coverage" \
+            -DTEXERE_BUILD_TESTS=ON \
+            -DTEXERE_BUILD_BENCHMARKS=OFF
+        env:
+          CXX: g++
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Capture coverage
+        run: |
+          lcov --capture --directory build --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' '*/_deps/*' '*/tests/*' --output-file coverage.info
+          lcov --list coverage.info
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.info
+          fail_ci_if_error: false
+
+  benchmark:
+    name: Benchmark (Linux GCC)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DTEXERE_BUILD_TESTS=OFF \
+            -DTEXERE_BUILD_BENCHMARKS=ON
+        env:
+          CXX: g++
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Run benchmarks
+        run: ./build/benchmarks/texere_bench --benchmark_format=json > benchmark_results.json
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark_results.json
