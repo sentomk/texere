@@ -51,6 +51,7 @@ jobs:
 
   coverage:
     name: Coverage (Linux GCC)
+    needs: build-and-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -89,6 +90,7 @@ jobs:
 
   benchmark:
     name: Benchmark (Linux GCC)
+    needs: build-and-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
