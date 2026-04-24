@@ -225,14 +225,40 @@ TEST_SUITE("comparison") {
     }
 
     TEST_CASE("byte comparison, not Unicode collation") {
-        // NFC vs NFD form of 'é': different byte sequences, not equal under ==
-        const char* nfc = "\xc3\xa9";            // U+00E9  (2 bytes)
-        const char* nfd = "e\xcc\x81";           // U+0065 U+0301  (3 bytes)
+        const char* nfc = "\xc3\xa9";
+        const char* nfd = "e\xcc\x81";
         auto s_nfc = string::from_utf8_unchecked(nfc);
         auto s_nfd = string::from_utf8_unchecked(nfd);
         CHECK_FALSE(s_nfc == s_nfd);
-        // But equals_normalized should treat them as equal
         CHECK(s_nfc.equals_normalized(s_nfd));
+    }
+
+    TEST_CASE("less-than-or-equal and greater-than-or-equal") {
+        auto a = string::from_utf8_unchecked("abc");
+        auto b = string::from_utf8_unchecked("abc");
+        auto c = string::from_utf8_unchecked("abd");
+        CHECK(a <= b);
+        CHECK(c >= a);
+    }
+
+    TEST_CASE("prefix comparison") {
+        auto short_s = string::from_utf8_unchecked("abc");
+        auto long_s = string::from_utf8_unchecked("abcdef");
+        CHECK(short_s < long_s);
+    }
+
+}
+
+// ============================================================================
+// size & emptiness
+// ============================================================================
+
+TEST_SUITE("size and emptiness") {
+
+    TEST_CASE("size_bytes vs length differ for CJK") {
+        auto s = string::from_utf8_unchecked("\xe4\xb8\xad\xe6\x96\x87");
+        CHECK(s.size_bytes() == 6);
+        CHECK(s.length() == 2);
     }
 
 }
@@ -256,6 +282,18 @@ TEST_SUITE("raw access") {
         auto c = s.as_chars();
         REQUIRE(c.size() == 2);
         CHECK(c[0] == 'h');
+    }
+
+    TEST_CASE("to_std_string returns owned copy") {
+        auto s = string::from_utf8_unchecked("hello");
+        std::string copy = s.to_std_string();
+        CHECK(copy == "hello");
+    }
+
+    TEST_CASE("to_std_string_view returns view into storage") {
+        auto s = string::from_utf8_unchecked("hello");
+        std::string_view sv = s.to_std_string_view();
+        CHECK(sv == "hello");
     }
 
 }
