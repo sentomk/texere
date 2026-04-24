@@ -69,9 +69,33 @@ TEST_SUITE("factory functions") {
     }
 
     TEST_CASE("from_utf8_unchecked wraps bytes without validation") {
-        // We can pass valid UTF-8 safely
         auto s = string::from_utf8_unchecked("safe");
         CHECK(s.size_bytes() == 4);
+    }
+
+    TEST_CASE("from_utf8 rejects truncated 3-byte sequence at end") {
+        auto result = string::from_utf8("\xe3\x81\x93\xe3\x82\x93\xe3\x81");
+        CHECK_FALSE(result.has_value());
+        CHECK(result.error().code == errc::truncated_input);
+    }
+
+    TEST_CASE("from_utf8 rejects invalid lead byte 0xFE") {
+        auto result = string::from_utf8("\xfe abc");
+        CHECK_FALSE(result.has_value());
+        CHECK(result.error().code == errc::invalid_utf8);
+    }
+
+    TEST_CASE("from_utf8_lossy replaces multiple invalid bytes") {
+        auto s = string::from_utf8_lossy("\x80\x81\x82");
+        CHECK(s.size_bytes() > 0);
+        CHECK_FALSE(s.empty());
+    }
+
+    TEST_CASE("from_utf8_unchecked accepts embedded null bytes") {
+        const char data[] = {'a', '\0', 'b'};
+        auto s = string::from_utf8_unchecked(std::string_view(data, 3));
+        CHECK(s.size_bytes() == 3);
+        CHECK(s.to_std_string_view()[1] == '\0');
     }
 
 }
@@ -134,6 +158,15 @@ TEST_SUITE("grapheme_at") {
         CHECK(s.length() == 1);
         auto g = s.grapheme_at(0);
         CHECK(g.byte_size() == s.size_bytes());
+    }
+
+    TEST_CASE("grapheme_at out-of-bounds returns empty grapheme_ref") {
+        auto s = string::from_utf8_unchecked("abc");
+        CHECK(s.length() == 3);
+        auto g = s.grapheme_at(10);
+        CHECK(g.utf8().empty());
+        CHECK(g.byte_size() == 0);
+        CHECK(g.index().byte_offset() == s.size_bytes());
     }
 
 }
