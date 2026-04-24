@@ -18,6 +18,11 @@ set(CMAKE_CXX_STANDARD          17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS        OFF)
 
+# MSVC: treat source files as UTF-8 for correct string literal encoding
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 # ============================================================================
 # Options
 # ============================================================================

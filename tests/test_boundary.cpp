@@ -148,7 +148,7 @@ TEST_SUITE("pure script strings") {
         auto s = string::from_utf8_unchecked(
             "\xd8\xa7\xd9\x84\xd8\xb9\xd8\xb1\xd8\xa8\xd9\x8a\xd8\xa9");
         CHECK(s.length() == 7);
-        CHECK(s.size_bytes() == 21);  // 7 × 3 bytes
+        CHECK(s.size_bytes() == 14);  // 7 × 2 bytes
     }
 
     TEST_CASE("pure Korean Hangul") {
@@ -200,7 +200,7 @@ TEST_SUITE("mixed script strings") {
             "\xf0\x9f\x91\xa7";
         auto s = string::from_utf8_unchecked(family);
         CHECK(s.length() == 1);  // single grapheme cluster
-        CHECK(s.size_bytes() == 17);
+        CHECK(s.size_bytes() == 18);  // 4+3+4+3+4
     }
 
 }

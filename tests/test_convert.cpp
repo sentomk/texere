@@ -46,7 +46,7 @@ TEST_SUITE("to_wstring") {
     TEST_CASE("emoji survives wstring round-trip") {
         auto s = string::from_utf8_unchecked("\xf0\x9f\x98\x80"); // 😀
         std::wstring ws = to_wstring(s);
-        CHECK(ws.size() == 2);  // emoji = surrogate pair in UTF-16
+        CHECK(ws.size() == (sizeof(wchar_t) == 2 ? 2 : 1));
 
         auto round_trip = from_wstring(ws);
         REQUIRE(round_trip.has_value());
@@ -90,13 +90,16 @@ TEST_SUITE("from_wstring") {
     }
 
     TEST_CASE("accepts valid surrogate pair") {
-        // U+1F600 😀 = D83D DE00 in UTF-16
-        std::wstring ws;
-        ws += L'\xD83D';
-        ws += L'\xDE00';
-        auto result = from_wstring(ws);
-        REQUIRE(result.has_value());
-        CHECK(result->size_bytes() == 4);  // 😀 is 4 bytes in UTF-8
+        // Surrogate pairs only apply to 16-bit wchar_t (Windows)
+        if constexpr (sizeof(wchar_t) == 2) {
+            // U+1F600 😀 = D83D DE00 in UTF-16
+            std::wstring ws;
+            ws += L'\xD83D';
+            ws += L'\xDE00';
+            auto result = from_wstring(ws);
+            REQUIRE(result.has_value());
+            CHECK(result->size_bytes() == 4);  // 😀 is 4 bytes in UTF-8
+        }
     }
 
     TEST_CASE("CJK survives round-trip") {
