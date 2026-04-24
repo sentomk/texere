@@ -20,6 +20,8 @@
 #include <texere/string_view.hpp>
 #include <texere/normalize.hpp>
 
+#include <vector>
+
 using namespace txt;
 using namespace txt::literals;
 
@@ -269,16 +271,99 @@ TEST_SUITE("raw access") {
 
 TEST_SUITE("codepoint_iterator") {
     TEST_CASE("decode basic") {
-        auto s = string::from_utf8_unchecked("a\xc3\xa9\xe3\x81\x93\xf0\x9f\x98\x80"); // 'a', 'é', 'こ', '😀'
+        auto s = string::from_utf8_unchecked("a\xc3\xa9\xe3\x81\x93\xf0\x9f\x98\x80");
         auto it = s.codepoints().begin();
-        CHECK(*it == 'a');
-        ++it;
-        CHECK(*it == 0x00E9);
-        ++it;
-        CHECK(*it == 0x3053);
-        ++it;
-        CHECK(*it == 0x1F600);
-        ++it;
+        CHECK(*it == 'a'); ++it;
+        CHECK(*it == 0x00E9); ++it;
+        CHECK(*it == 0x3053); ++it;
+        CHECK(*it == 0x1F600); ++it;
         CHECK(it == s.codepoints().end());
+    }
+
+    TEST_CASE("decodes 1-byte ASCII sequence") {
+        auto s = string::from_utf8_unchecked("abc");
+        std::vector<char32_t> cps;
+        for (auto cp : s.codepoints()) cps.push_back(cp);
+        CHECK(cps.size() == 3);
+    }
+
+    TEST_CASE("decodes 2-byte sequence") {
+        auto s = string::from_utf8_unchecked("\xc3\xa9");
+        CHECK(*s.codepoints().begin() == 0x00E9);
+    }
+
+    TEST_CASE("decodes 3-byte sequence (CJK)") {
+        auto s = string::from_utf8_unchecked("\xe3\x81\x93");
+        CHECK(*s.codepoints().begin() == 0x3053);
+    }
+
+    TEST_CASE("decodes 4-byte sequence (emoji)") {
+        auto s = string::from_utf8_unchecked("\xf0\x9f\x98\x80");
+        CHECK(*s.codepoints().begin() == 0x1F600);
+    }
+
+    TEST_CASE("invalid UTF-8 replaced with U+FFFD") {
+        auto s = string::from_utf8_unchecked("a\x80""b");
+        std::vector<char32_t> cps;
+        for (auto cp : s.codepoints()) cps.push_back(cp);
+        REQUIRE(cps.size() == 3);
+        CHECK(cps[1] == 0xFFFD);
+    }
+}
+
+TEST_SUITE("byte_iterator") {
+    TEST_CASE("forward iteration over ASCII") {
+        auto s = string::from_utf8_unchecked("abc");
+        auto it = s.bytes().begin();
+        CHECK(*it == 'a'); ++it;
+        CHECK(*it == 'b'); ++it;
+        CHECK(*it == 'c'); ++it;
+        CHECK(it == s.bytes().end());
+    }
+
+    TEST_CASE("backward iteration") {
+        auto s = string::from_utf8_unchecked("abc");
+        auto it = s.bytes().end();
+        --it; CHECK(*it == 'c');
+        --it; CHECK(*it == 'b');
+        --it; CHECK(*it == 'a');
+    }
+}
+
+TEST_SUITE("grapheme_iterator") {
+    TEST_CASE("ASCII: each byte is a separate grapheme") {
+        auto s = string::from_utf8_unchecked("abc");
+        std::vector<std::string> clusters;
+        for (auto g : s.graphemes()) clusters.push_back(std::string(g.utf8()));
+        REQUIRE(clusters.size() == 3);
+    }
+
+    TEST_CASE("ZWJ emoji family counts as one grapheme") {
+        const char family[] =
+            "\xf0\x9f\x91\xa8"
+            "\xe2\x80\x8d"
+            "\xf0\x9f\x91\xa9"
+            "\xe2\x80\x8d"
+            "\xf0\x9f\x91\xa7";
+        auto s = string::from_utf8_unchecked(family);
+        std::size_t n = 0;
+        for (auto g : s.graphemes()) { (void)g; ++n; }
+        CHECK(n == 1);
+    }
+
+    TEST_CASE("CR + LF counts as one grapheme") {
+        auto s = string::from_utf8_unchecked("\x0d\x0a");
+        std::size_t n = 0;
+        for (auto g : s.graphemes()) { (void)g; ++n; }
+        CHECK(n == 1);
+    }
+
+    TEST_CASE("grapheme index() matches byte offset") {
+        auto s = string::from_utf8_unchecked("a\xc3""\xa9""b");
+        auto it = s.graphemes().begin();
+        CHECK((*it).index().byte_offset() == 0); ++it;
+        CHECK((*it).index().byte_offset() == 1); ++it;
+        CHECK((*it).index().byte_offset() == 3); ++it;
+        CHECK(it == s.graphemes().end());
     }
 }
