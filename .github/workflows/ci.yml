@@ -116,6 +116,16 @@ jobs:
       - name: Run benchmarks
         run: ./build/benchmarks/texere_bench --benchmark_format=json > benchmark_results.json
 
+      - name: Ensure gh-pages branch exists
+        run: |
+          git fetch origin gh-pages 2>/dev/null || {
+            git checkout --orphan gh-pages &&
+            git reset --hard &&
+            git commit --allow-empty -m "Initialize gh-pages branch" &&
+            git push origin gh-pages &&
+            git checkout main
+          }
+
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
