@@ -31,7 +31,7 @@
 Benchmark results are tracked continuously via [github-action-benchmark](https://github.com/benchmark-action/github-action-benchmark) and visualized on the project's GitHub Pages:
 
 <p align="center">
-  <a href="https://sentomk.github.io/texere/" style="font-size:1.2em; font-weight:bold; color:#0366d6;">
+  <a href="https://sentomk.github.io/texere/dev/bench/" style="font-size:1.2em; font-weight:bold; color:#0366d6;">
     Benchmark Dashboard &rarr;
   </a>
 </p>
