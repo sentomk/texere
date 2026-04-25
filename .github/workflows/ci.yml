@@ -92,7 +92,11 @@ jobs:
   benchmark:
     name: Benchmark (Linux GCC)
     needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      deployments: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -112,8 +116,13 @@ jobs:
       - name: Run benchmarks
         run: ./build/benchmarks/texere_bench --benchmark_format=json > benchmark_results.json
 
-      - name: Upload results
-        uses: actions/upload-artifact@v4
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
         with:
-          name: benchmark-results
-          path: benchmark_results.json
+          tool: 'googlecpp'
+          output-file-path: benchmark_results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          alert-threshold: '200%'
+          comment-on-alert: true
+          fail-on-alert: true

@@ -2,6 +2,15 @@
 
 > *texere* — Latin for "to weave": weaving together bytes, code points, and grapheme clusters into a single coherent abstraction.
 
+<div align="center">
+
+[![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg?style=flat-square&logo=c%2B%2B&logoColor=white)](https://isocpp.org/)
+[![CI](https://github.com/SentoMK/texere/actions/workflows/ci.yml/badge.svg?branch=main&style=flat-square)](https://github.com/SentoMK/texere/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/SentoMK/texere?style=flat-square&branch=main)](https://codecov.io/gh/SentoMK/texere)
+[![License](https://img.shields.io/github/license/SentoMK/texere?style=flat-square)](LICENSE)
+
+</div>
+
 **texere** is a Unicode-aware C++17 string library that provides a type-safe, UTF-8 string value type as a drop-in replacement for `std::string` in Unicode-aware contexts. It is not a replacement for ICU — it is a **lightweight, modern, zero-surprise** string abstraction.
 
 ---
@@ -14,6 +23,25 @@
 - **Explicit normalization**: no automatic NFC; provides `normalize()` and `equals_normalized()`
 - **Opaque Index**: obtainable only from iterators, preventing confusion between byte offsets and grapheme indices
 - **Unicode 15.1**: grapheme cluster boundaries, case mapping, and normalization all based on Unicode 15.1
+
+---
+
+## Benchmarks
+
+Benchmark results are tracked continuously via [github-action-benchmark](https://github.com/benchmark-action/github-action-benchmark) and visualized on the project's GitHub Pages:
+
+<p align="center">
+  <a href="https://sentomk.github.io/texere/" style="font-size:1.2em; font-weight:bold; color:#0366d6;">
+    Benchmark Dashboard &rarr;
+  </a>
+</p>
+
+The dashboard provides interactive Chart.js charts with:
+- **Historical trends** — track performance across commits over time
+- **Tooltips** — hover for commit hash, message, date, and exact values
+- **JSON export** — download raw results for offline analysis
+
+> **Note**: After enabling GitHub Pages (Settings → Pages → `gh-pages` branch, root directory), the dashboard will be available at the link above after the first CI run on `main`.
 
 ---
 
