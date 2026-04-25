@@ -121,6 +121,8 @@ jobs:
           git fetch origin gh-pages 2>/dev/null || {
             git checkout --orphan gh-pages &&
             git reset --hard &&
+            git config user.name "github-actions[bot]" &&
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com" &&
             git commit --allow-empty -m "Initialize gh-pages branch" &&
             git push origin gh-pages &&
             git checkout main
