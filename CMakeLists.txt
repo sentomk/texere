@@ -38,6 +38,7 @@ option(TEXERE_USE_FMT          "Use {fmt} for formatting support"        OFF)
 include(FetchContent)
 
 if(TEXERE_USE_SIMDUTF)
+    set(SIMDUTF_TESTS OFF CACHE BOOL "Disable simdutf upstream tests in FetchContent builds" FORCE)
     FetchContent_Declare(simdutf
         GIT_REPOSITORY https://github.com/simdutf/simdutf.git
         GIT_TAG        v5.2.8
