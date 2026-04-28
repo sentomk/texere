@@ -12,217 +12,196 @@
 #include <texere/string.hpp>
 #include <texere/normalize.hpp>
 
+#include "bench_framework.hpp"
+#include "bench_inputs.hpp"
+
 #include <string>
 #include <string_view>
 
 using namespace txt;
 
 // ============================================================================
-// Helpers
-// ============================================================================
-
-// ASCII string (1000 chars)
-static const std::string kAscii1k(1000, 'a');
-
-// NFD form of U+00E9 repeated 1000 times (e + combining acute = 3 bytes each)
-static const std::string kNFD1000 = []() {
-    std::string s;
-    s.reserve(3000);
-    for (int i = 0; i < 1000; ++i) s += "e\xcc\x81";
-    return s;
-}();
-
-// NFC form of U+00E9 repeated 1000 times (composed = 2 bytes each)
-static const std::string kNFC1000 = []() {
-    std::string s;
-    s.reserve(2000);
-    for (int i = 0; i < 1000; ++i) s += "\xc3\xa9";
-    return s;
-}();
-
-// CJK string (1000 chars, 3 bytes each)
-static const std::string kCJK1k = []() {
-    std::string s;
-    s.reserve(3000);
-    for (int i = 0; i < 1000; ++i) s += "\xe4\xb8\xad";
-    return s;
-}();
-
-// Mixed ASCII + CJK
-static const std::string kMixed1k = []() {
-    std::string s;
-    s.reserve(2000);
-    for (int i = 0; i < 500; ++i) s += "a";
-    for (int i = 0; i < 500; ++i) s += "\xe4\xb8\xad";
-    return s;
-}();
-
-// ============================================================================
 // normalized() – NFC
 // ============================================================================
 
 static void BM_Normalize_NFC_ASCII(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAscii1k);
+    const auto& input = texere_bench::inputs::ascii_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto norm = normalized(s, normalization_form::NFC);
         benchmark::DoNotOptimize(norm);
     }
-    state.SetBytesProcessed(state.iterations() * kAscii1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Normalize_NFC_ASCII);
+BENCHMARK(BM_Normalize_NFC_ASCII)->Name("Normalize.NFC/txt/ascii/1k");
 
 static void BM_Normalize_NFC_NFD_to_NFC(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kNFD1000);
+    const auto& input = texere_bench::inputs::nfd_e_acute_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto norm = normalized(s, normalization_form::NFC);
         benchmark::DoNotOptimize(norm);
     }
-    state.SetBytesProcessed(state.iterations() * kNFD1000.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Normalize_NFC_NFD_to_NFC);
+BENCHMARK(BM_Normalize_NFC_NFD_to_NFC)->Name("Normalize.NFC/txt/nfd_e_acute/1k");
 
 static void BM_Normalize_NFC_CJK(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kCJK1k);
+    const auto& input = texere_bench::inputs::cjk_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto norm = normalized(s, normalization_form::NFC);
         benchmark::DoNotOptimize(norm);
     }
-    state.SetBytesProcessed(state.iterations() * kCJK1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Normalize_NFC_CJK);
+BENCHMARK(BM_Normalize_NFC_CJK)->Name("Normalize.NFC/txt/cjk/1k");
 
 // ============================================================================
 // normalized() – NFD
 // ============================================================================
 
 static void BM_Normalize_NFD_ASCII(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAscii1k);
+    const auto& input = texere_bench::inputs::ascii_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto norm = normalized(s, normalization_form::NFD);
         benchmark::DoNotOptimize(norm);
     }
-    state.SetBytesProcessed(state.iterations() * kAscii1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Normalize_NFD_ASCII);
+BENCHMARK(BM_Normalize_NFD_ASCII)->Name("Normalize.NFD/txt/ascii/1k");
 
 static void BM_Normalize_NFD_NFC_to_NFD(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kNFC1000);
+    const auto& input = texere_bench::inputs::nfc_e_acute_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto norm = normalized(s, normalization_form::NFD);
         benchmark::DoNotOptimize(norm);
     }
-    state.SetBytesProcessed(state.iterations() * kNFC1000.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Normalize_NFD_NFC_to_NFD);
+BENCHMARK(BM_Normalize_NFD_NFC_to_NFD)->Name("Normalize.NFD/txt/nfc_e_acute/1k");
 
 // ============================================================================
 // normalized() – NFKC
 // ============================================================================
 
 static void BM_Normalize_NFKC_ASCII(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAscii1k);
+    const auto& input = texere_bench::inputs::ascii_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto norm = normalized(s, normalization_form::NFKC);
         benchmark::DoNotOptimize(norm);
     }
-    state.SetBytesProcessed(state.iterations() * kAscii1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Normalize_NFKC_ASCII);
+BENCHMARK(BM_Normalize_NFKC_ASCII)->Name("Normalize.NFKC/txt/ascii/1k");
 
 static void BM_Normalize_NFKC_Mixed(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kMixed1k);
+    const auto& input = texere_bench::inputs::mixed_ascii_cjk_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto norm = normalized(s, normalization_form::NFKC);
         benchmark::DoNotOptimize(norm);
     }
-    state.SetBytesProcessed(state.iterations() * kMixed1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Normalize_NFKC_Mixed);
+BENCHMARK(BM_Normalize_NFKC_Mixed)->Name("Normalize.NFKC/txt/mixed_ascii_cjk/1k");
 
 // ============================================================================
 // normalized() – NFKD
 // ============================================================================
 
 static void BM_Normalize_NFKD_ASCII(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAscii1k);
+    const auto& input = texere_bench::inputs::ascii_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto norm = normalized(s, normalization_form::NFKD);
         benchmark::DoNotOptimize(norm);
     }
-    state.SetBytesProcessed(state.iterations() * kAscii1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Normalize_NFKD_ASCII);
+BENCHMARK(BM_Normalize_NFKD_ASCII)->Name("Normalize.NFKD/txt/ascii/1k");
 
 // ============================================================================
 // equals_normalized()
 // ============================================================================
 
 static void BM_EqualsNormalized_Equal_NFC(benchmark::State& state) {
-    auto a = string::from_utf8_unchecked(kNFC1000);
-    auto b = string::from_utf8_unchecked(kNFC1000);
+    const auto& input = texere_bench::inputs::nfc_e_acute_1k();
+    auto a = string::from_utf8_unchecked(input);
+    auto b = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto eq = txt::equals_normalized(a, b, normalization_form::NFC);
         benchmark::DoNotOptimize(eq);
     }
-    state.SetBytesProcessed(state.iterations() * kNFC1000.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_EqualsNormalized_Equal_NFC);
+BENCHMARK(BM_EqualsNormalized_Equal_NFC)->Name("Normalize.Equals/txt/nfc_equal/1k");
 
 static void BM_EqualsNormalized_Equal_NFD_to_NFC(benchmark::State& state) {
-    auto a = string::from_utf8_unchecked(kNFC1000);
-    auto b = string::from_utf8_unchecked(kNFD1000);
+    const auto& left = texere_bench::inputs::nfc_e_acute_1k();
+    const auto& right = texere_bench::inputs::nfd_e_acute_1k();
+    auto a = string::from_utf8_unchecked(left);
+    auto b = string::from_utf8_unchecked(right);
     for (auto _ : state) {
         auto eq = txt::equals_normalized(a, b, normalization_form::NFC);
         benchmark::DoNotOptimize(eq);
     }
-    state.SetBytesProcessed(state.iterations() * (kNFC1000.size() + kNFD1000.size()));
+    texere_bench::set_bytes_processed(state, left.size() + right.size());
 }
-BENCHMARK(BM_EqualsNormalized_Equal_NFD_to_NFC);
+BENCHMARK(BM_EqualsNormalized_Equal_NFD_to_NFC)->Name("Normalize.Equals/txt/nfc_vs_nfd_equal/1k");
 
 static void BM_EqualsNormalized_NotEqual(benchmark::State& state) {
-    auto a = string::from_utf8_unchecked(kNFC1000);
-    auto b = string::from_utf8_unchecked(kAscii1k);
+    const auto& left = texere_bench::inputs::nfc_e_acute_1k();
+    const auto& right = texere_bench::inputs::ascii_1k();
+    auto a = string::from_utf8_unchecked(left);
+    auto b = string::from_utf8_unchecked(right);
     for (auto _ : state) {
         auto eq = txt::equals_normalized(a, b, normalization_form::NFC);
         benchmark::DoNotOptimize(eq);
     }
-    state.SetBytesProcessed(state.iterations() * (kNFC1000.size() + kAscii1k.size()));
+    texere_bench::set_bytes_processed(state, left.size() + right.size());
 }
-BENCHMARK(BM_EqualsNormalized_NotEqual);
+BENCHMARK(BM_EqualsNormalized_NotEqual)->Name("Normalize.Equals/txt/not_equal/1k");
 
 // ============================================================================
 // Naive baselines — no-op pass-through for normalized(), byte-level for equals
 // ============================================================================
 
 static void BM_Naive_Normalize_NFC_ASCII(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAscii1k);
+    const auto& input = texere_bench::inputs::ascii_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         // Naive "normalization": return input as-is
         auto out = s.to_std_string();
         benchmark::DoNotOptimize(out);
     }
-    state.SetBytesProcessed(state.iterations() * kAscii1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Naive_Normalize_NFC_ASCII);
+BENCHMARK(BM_Naive_Normalize_NFC_ASCII)->Name("Normalize.NFC/naive/ascii/1k");
 
 static void BM_Naive_Normalize_NFC_NFD_to_NFC(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kNFD1000);
+    const auto& input = texere_bench::inputs::nfd_e_acute_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto out = s.to_std_string();
         benchmark::DoNotOptimize(out);
     }
-    state.SetBytesProcessed(state.iterations() * kNFD1000.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Naive_Normalize_NFC_NFD_to_NFC);
+BENCHMARK(BM_Naive_Normalize_NFC_NFD_to_NFC)->Name("Normalize.NFC/naive/nfd_e_acute/1k");
 
 static void BM_Naive_EqualsNormalized_Equal_NFC(benchmark::State& state) {
-    auto a = string::from_utf8_unchecked(kNFC1000);
-    auto b = string::from_utf8_unchecked(kNFC1000);
+    const auto& input = texere_bench::inputs::nfc_e_acute_1k();
+    auto a = string::from_utf8_unchecked(input);
+    auto b = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         // Naive: byte-level comparison
         auto eq = (a.to_std_string_view() == b.to_std_string_view());
         benchmark::DoNotOptimize(eq);
     }
-    state.SetBytesProcessed(state.iterations() * kNFC1000.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Naive_EqualsNormalized_Equal_NFC);
+BENCHMARK(BM_Naive_EqualsNormalized_Equal_NFC)->Name("Normalize.Equals/naive/nfc_equal/1k");
