@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes" />
+    <style>
+      html {
+        font-family: BlinkMacSystemFont,-apple-system,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+        -webkit-font-smoothing: antialiased;
+        background-color: #fff;
+        font-size: 16px;
+      }
+      body {
+        color: #4a4a4a;
+        margin: 8px;
+        font-size: 1em;
+        font-weight: 400;
+      }
+      header {
+        margin-bottom: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      main {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      a { color: #3273dc; cursor: pointer; text-decoration: none; }
+      a:hover { color: #000; }
+      .header-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .title { font-size: 1.5rem; font-weight: 600; margin: 0; }
+      .subtitle { color: #666; font-size: 0.85rem; }
+      .nav-link { font-size: 0.9rem; }
+      .summary-bar {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding: 12px 16px;
+        background: #f5f7fa;
+        border-radius: 8px;
+        margin: 8px 0;
+      }
+      .summary-stat {
+        display: flex;
+        flex-direction: column;
+      }
+      .summary-stat .value { font-size: 1.1rem; font-weight: 600; }
+      .summary-stat .label { font-size: 0.75rem; color: #666; }
+      .group-card {
+        margin: 12px 0;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px;
+      }
+      .group-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 0 0 4px 0;
+      }
+      .group-desc {
+        font-size: 0.8rem;
+        color: #666;
+        margin: 0 0 12px 0;
+      }
+      .group-unit {
+        font-size: 0.75rem;
+        color: #888;
+        margin: 0 0 8px 0;
+      }
+      .chart-wrap {
+        position: relative;
+        width: 100%;
+        max-width: 900px;
+      }
+      .single-bench-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 8px 0;
+      }
+      .single-bench-card {
+        background: #fafafa;
+        border: 1px solid #eee;
+        border-radius: 6px;
+        padding: 12px 16px;
+        min-width: 200px;
+      }
+      .single-bench-card .name {
+        font-size: 0.8rem;
+        color: #666;
+        margin-bottom: 4px;
+      }
+      .single-bench-card .value {
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+      .single-bench-card .unit {
+        font-size: 0.75rem;
+        color: #888;
+      }
+      footer {
+        margin-top: 24px;
+        padding: 12px 0;
+        font-size: 0.75rem;
+        color: #888;
+        border-top: 1px solid #eee;
+      }
+    </style>
+    <title>Benchmark Cross-Scenario Comparison</title>
+  </head>
+  <body>
+    <header>
+      <div class="header-row">
+        <h1 class="title">Cross-Scenario Comparison</h1>
+        <span class="nav-link"><a href="index.html">← Back to Time Series</a></span>
+      </div>
+      <div class="subtitle">
+        Compare benchmark values across different input types / scenarios
+        for the same operation. Based on the latest benchmark run.
+      </div>
+      <div class="summary-bar" id="summary-bar">
+        <div class="summary-stat">
+          <span class="value" id="total-groups">-</span>
+          <span class="label">operation groups</span>
+        </div>
+        <div class="summary-stat">
+          <span class="value" id="total-benches">-</span>
+          <span class="label">benchmarks</span>
+        </div>
+        <div class="summary-stat">
+          <span class="value" id="latest-date">-</span>
+          <span class="label">latest run</span>
+        </div>
+      </div>
+    </header>
+    <main id="main"></main>
+    <footer>
+      Powered by <a rel="noopener" href="https://github.com/marketplace/actions/continuous-benchmark">github-action-benchmark</a> &amp; <a rel="noopener" href="https://www.chartjs.org/">Chart.js</a>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.2/dist/Chart.min.js"></script>
+    <script src="data.js"></script>
+    <script>
+      (function() {
+        // Colors: odd indices for naive (lighter), even for txt (solid)
+        const IMPL_COLORS = [
+          ['#4363d8', '#4363d8' + '40'],  // blue:  txt solid, naive light
+          ['#e6194b', '#e6194b' + '40'],  // red
+          ['#3cb44b', '#3cb44b' + '40'],  // green
+          ['#f58231', '#f58231' + '40'],  // orange
+          ['#911eb4', '#911eb4' + '40'],  // purple
+        ];
+
+        // Parse benchmark name.
+        // BM_Naive_ToUpper_ASCII_Lower →
+        //   { operation: "ToUpper", scenario: "ASCII_Lower", isNaive: true }
+        // BM_ToUpper_ASCII_Lower →
+        //   { operation: "ToUpper", scenario: "ASCII_Lower", isNaive: false }
+        function parseName(name) {
+          const s = name.replace(/^BM_/, '');
+          let isNaive = false;
+          let opStr = s;
+          if (s.startsWith('Naive_')) {
+            isNaive = true;
+            opStr = s.slice(6); // remove "Naive_"
+          }
+          const i = opStr.lastIndexOf('_');
+          if (i === -1) return { operation: opStr, scenario: '', isNaive };
+          return {
+            operation: opStr.substring(0, i),
+            scenario: opStr.substring(i + 1),
+            isNaive,
+          };
+        }
+
+        function formatScenario(name) {
+          return name
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        function formatOperation(name) {
+          return name
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        function fmtTime(d) {
+          const date = new Date(d);
+          return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+
+        function init() {
+          const data = window.BENCHMARK_DATA;
+          if (!data) {
+            document.getElementById('main').textContent =
+              'No benchmark data found. Run benchmarks first.';
+            return;
+          }
+
+          // Collect all benchmark results from all entries
+          const allBenches = [];
+          for (const entryName of Object.keys(data.entries)) {
+            for (const entry of data.entries[entryName]) {
+              for (const bench of entry.benches) {
+                allBenches.push({
+                  commit: entry.commit,
+                  date: entry.date,
+                  tool: entry.tool,
+                  name: bench.name,
+                  value: bench.value,
+                  unit: bench.unit,
+                  extra: bench.extra,
+                });
+              }
+            }
+          }
+
+          if (allBenches.length === 0) {
+            document.getElementById('main').textContent = 'No benchmarks found.';
+            return;
+          }
+
+          // Find latest entry per benchmark name
+          const latestByName = new Map();
+          for (const b of allBenches) {
+            const existing = latestByName.get(b.name);
+            if (!existing || b.date > existing.date) {
+              latestByName.set(b.name, b);
+            }
+          }
+
+          // Summary stats
+          const allDates = allBenches.map(b => b.date);
+          const maxDate = Math.max(...allDates);
+          document.getElementById('total-benches').textContent = latestByName.size;
+          document.getElementById('latest-date').textContent = fmtTime(maxDate);
+
+          // Group by normalized operation (strip Naive_ prefix before grouping)
+          // Each group contains both naive and non-naive items.
+          // Key: operation -> [{ bench, scenario, isNaive }]
+          const groups = new Map();
+          for (const [name, bench] of latestByName) {
+            const { operation, scenario, isNaive } = parseName(name);
+            if (!groups.has(operation)) {
+              groups.set(operation, { items: [], hasNaive: false, hasTxt: false });
+            }
+            const g = groups.get(operation);
+            g.items.push({ benchName: name, bench, scenario: scenario || name, isNaive });
+            if (isNaive) g.hasNaive = true;
+            else g.hasTxt = true;
+          }
+
+          document.getElementById('total-groups').textContent = groups.size;
+
+          // Sort groups: largest first
+          const sortedGroups = Array.from(groups.entries())
+            .map(([op, g]) => ({ operation: op, items: g.items, hasNaive: g.hasNaive, hasTxt: g.hasTxt }))
+            .sort((a, b) => b.items.length - a.items.length);
+
+          // Filter: groups with 2+ items get bar charts; singles get cards
+          const multiGroups = sortedGroups.filter(g => g.items.length >= 2);
+          const singleItems = sortedGroups.filter(g => g.items.length === 1)
+            .flatMap(g => g.items);
+
+          const main = document.getElementById('main');
+
+          // --- Multi-scenario groups (bar charts) ---
+          for (const group of multiGroups) {
+            const card = document.createElement('div');
+            card.className = 'group-card';
+            main.appendChild(card);
+
+            const title = document.createElement('h2');
+            title.className = 'group-title';
+            title.textContent = formatOperation(group.operation);
+            card.appendChild(title);
+
+            // Determine unit
+            const units = new Set(group.items.map(i => i.bench.unit));
+            const unit = units.size === 1 ? group.items[0].bench.unit : '(mixed units)';
+            const unitHint = document.createElement('div');
+            unitHint.className = 'group-unit';
+            unitHint.textContent = 'Unit: ' + unit + (unit.includes('ns/iter') ? ' (lower is better)' : '');
+            card.appendChild(unitHint);
+
+            // Legend when both naive and txt exist
+            if (group.hasNaive && group.hasTxt) {
+              const legend = document.createElement('div');
+              legend.style.cssText = 'font-size:0.75rem;margin:0 0 8px 0;display:flex;gap:16px;';
+              legend.innerHTML =
+                '<span><span style="display:inline-block;width:12px;height:12px;background:' + IMPL_COLORS[0][0] + ';margin-right:4px;border-radius:2px;"></span>txt (uni_algo/simdutf)</span>' +
+                '<span><span style="display:inline-block;width:12px;height:12px;background:' + IMPL_COLORS[0][1] + ';margin-right:4px;border-radius:2px;border:1px solid ' + IMPL_COLORS[0][0] + ';"></span>naive baseline</span>';
+              card.appendChild(legend);
+            }
+
+            // Sort by value ascending (lower is better for ns/iter)
+            const sorted = [...group.items].sort((a, b) => a.bench.value - b.bench.value);
+
+            // Datasets: one bucket per unique scenario name (without impl prefix)
+            // We use a map: scenario -> { txtValue, naiveValue, both }
+            // Then render as two datasets on the same chart.
+            const scenarioMap = new Map();
+            for (const item of sorted) {
+              const key = item.scenario;
+              if (!scenarioMap.has(key)) {
+                scenarioMap.set(key, { txt: null, naive: null });
+              }
+              const entry = scenarioMap.get(key);
+              if (item.isNaive) entry.naive = item;
+              else entry.txt = item;
+            }
+
+            // Build chart data
+            const scenarioKeys = Array.from(scenarioMap.keys());
+            const txtValues = scenarioKeys.map(k => scenarioMap.get(k).txt ? scenarioMap.get(k).txt.bench.value : null);
+            const naiveValues = scenarioKeys.map(k => scenarioMap.get(k).naive ? scenarioMap.get(k).naive.bench.value : null);
+
+            // Build labels with implementation tags
+            const labels = scenarioKeys.map(k => {
+              const e = scenarioMap.get(k);
+              let tag = '';
+              if (e.txt && e.naive) tag = ' [txt]';
+              else if (e.txt && !e.naive) tag = ' [txt]';
+              else if (!e.txt && e.naive) tag = ' [naive]';
+              return formatScenario(k) + tag;
+            });
+
+            const wrap = document.createElement('div');
+            wrap.className = 'chart-wrap';
+            card.appendChild(wrap);
+
+            const canvas = document.createElement('canvas');
+            wrap.appendChild(canvas);
+
+            const datasets = [];
+            let colorIdx = 0;
+
+            if (group.hasTxt) {
+              const c = IMPL_COLORS[colorIdx % IMPL_COLORS.length][0];
+              colorIdx++;
+              datasets.push({
+                label: 'txt',
+                data: txtValues,
+                backgroundColor: c,
+                borderColor: c,
+                borderWidth: 1,
+              });
+            }
+            if (group.hasNaive) {
+              const c = IMPL_COLORS[colorIdx % IMPL_COLORS.length];
+              datasets.push({
+                label: 'naive',
+                data: naiveValues,
+                backgroundColor: c[1],
+                borderColor: c[0],
+                borderWidth: 1,
+                borderDash: [2, 2],
+              });
+            }
+
+            // Click handler: collect all items for index lookup
+            const scenarioItems = scenarioKeys.map(k => {
+              const e = scenarioMap.get(k);
+              return e.naive || e.txt; // prefer naive for click target
+            });
+
+            new Chart(canvas, {
+              type: 'horizontalBar',
+              data: {
+                labels,
+                datasets,
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                legend: { display: datasets.length > 1 },
+                title: {
+                  display: true,
+                  text: '' + (unit.includes('ns/iter') ? 'Lower is better' : ''),
+                  fontSize: 12,
+                  fontColor: '#888',
+                },
+                scales: {
+                  xAxes: [{
+                    scaleLabel: { display: true, labelString: unit },
+                    ticks: { beginAtZero: true },
+                  }],
+                  yAxes: [{
+                    scaleLabel: { display: true, labelString: 'Scenario' },
+                  }],
+                },
+                tooltips: {
+                  callbacks: {
+                    label: function(item) {
+                      const idx = item.index;
+                      const e = scenarioMap.get(scenarioKeys[idx]);
+                      const isNaiveDS = item.datasetIndex === 1;
+                      const bench = isNaiveDS ? e.naive : e.txt;
+                      if (!bench) return '';
+                      let label = bench.bench.value.toFixed(3) + ' ' + bench.bench.unit;
+                      if (bench.bench.extra) {
+                        const m = bench.bench.extra.match(/iterations:\s*(\d+)/);
+                        if (m) label += '  |  ' + Number(m[1]).toLocaleString() + ' iters';
+                      }
+                      return label;
+                    },
+                    afterTitle: function(items) {
+                      const idx = items[0].index;
+                      const e = scenarioMap.get(scenarioKeys[idx]);
+                      const isNaiveDS = items[0].datasetIndex === 1;
+                      const bench = isNaiveDS ? e.naive : e.txt;
+                      return bench ? bench.benchName : '';
+                    },
+                  },
+                },
+                onClick: function(_mouseEvent, activeElems) {
+                  if (activeElems.length === 0) return;
+                  const idx = activeElems[0]._index;
+                  const e = scenarioMap.get(scenarioKeys[idx]);
+                  const isNaiveDS = activeElems[0].datasetIndex === 1;
+                  const bench = isNaiveDS ? e.naive : e.txt;
+                  if (bench && bench.bench.commit.url) {
+                    window.open(bench.bench.commit.url, '_blank');
+                  }
+                },
+              },
+            });
+          }
+
+          // --- Single-scenario benchmarks (as info cards) ---
+          if (singleItems.length > 0) {
+            const heading = document.createElement('h2');
+            heading.style.cssText = 'font-size:1rem;margin:16px 0 8px;color:#666;';
+            heading.textContent = 'Single-scenario benchmarks (no comparison group)';
+            main.appendChild(heading);
+
+            const grid = document.createElement('div');
+            grid.className = 'single-bench-grid';
+            main.appendChild(grid);
+
+            for (const item of singleItems) {
+              const card = document.createElement('div');
+              card.className = 'single-bench-card';
+              grid.appendChild(card);
+
+              const nameEl = document.createElement('div');
+              nameEl.className = 'name';
+              nameEl.textContent = item.benchName.replace(/^BM_/, '');
+              card.appendChild(nameEl);
+
+              const valEl = document.createElement('div');
+              valEl.className = 'value';
+              valEl.textContent = item.bench.value.toFixed(3);
+              card.appendChild(valEl);
+
+              const unitEl = document.createElement('div');
+              unitEl.className = 'unit';
+              unitEl.textContent = item.bench.unit;
+              card.appendChild(unitEl);
+            }
+          }
+        }
+
+        init();
+      })();
+    </script>
+  </body>
+</html>
