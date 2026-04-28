@@ -15,81 +15,66 @@
 #include <texere/string.hpp>
 #include <texere/string_view.hpp>
 
+#include "bench_framework.hpp"
+#include "bench_inputs.hpp"
+
 using namespace txt;
-
-// ============================================================================
-// Helpers
-// ============================================================================
-
-// 1 000-grapheme ASCII string
-static const std::string kAscii1k(1000, 'x');
-
-// 1 000-grapheme CJK string (3 bytes/char × 1000)
-static const std::string kCJK1k = []() {
-    std::string s;
-    s.reserve(3000);
-    for (int i = 0; i < 1000; ++i)
-        s += "\xe4\xb8\xad"; // 中
-    return s;
-}();
-
-// A ZWJ family emoji repeated 100 times (1 grapheme cluster = 18 bytes each)
-static const std::string kEmoji100 = []() {
-    const char family[] =
-        "\xf0\x9f\x91\xa8\xe2\x80\x8d"
-        "\xf0\x9f\x91\xa9\xe2\x80\x8d"
-        "\xf0\x9f\x91\xa7";
-    std::string s;
-    for (int i = 0; i < 100; ++i) s += family;
-    return s;
-}();
 
 // ============================================================================
 // length()  –  grapheme count via full scan
 // ============================================================================
 
 static void BM_Length_ASCII(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAscii1k);
+    const auto& input = texere_bench::inputs::ascii_x_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         benchmark::DoNotOptimize(s.length());
     }
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Length_ASCII);
+BENCHMARK(BM_Length_ASCII)->Name("String.Length/txt/ascii/1k");
 
 static void BM_Length_CJK(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kCJK1k);
+    const auto& input = texere_bench::inputs::cjk_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         benchmark::DoNotOptimize(s.length());
     }
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Length_CJK);
+BENCHMARK(BM_Length_CJK)->Name("String.Length/txt/cjk/1k");
 
 static void BM_Length_Emoji_ZWJ(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kEmoji100);
+    const auto& input = texere_bench::inputs::emoji_family_100();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         benchmark::DoNotOptimize(s.length());
     }
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Length_Emoji_ZWJ);
+BENCHMARK(BM_Length_Emoji_ZWJ)->Name("String.Length/txt/emoji_zwj/100");
 
 // ============================================================================
 // grapheme_at(n)  –  O(n) seek
 // ============================================================================
 
 static void BM_GraphemeAt_Middle_CJK(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kCJK1k);
+    const auto& input = texere_bench::inputs::cjk_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         benchmark::DoNotOptimize(s.grapheme_at(500));
     }
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_GraphemeAt_Middle_CJK);
+BENCHMARK(BM_GraphemeAt_Middle_CJK)->Name("String.GraphemeAt/txt/cjk_middle/1k");
 
 // ============================================================================
 // Iteration  –  full grapheme traversal
 // ============================================================================
 
 static void BM_GraphemeIteration_CJK(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kCJK1k);
+    const auto& input = texere_bench::inputs::cjk_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         std::size_t n = 0;
         for (auto g : s.graphemes()) {
@@ -98,11 +83,13 @@ static void BM_GraphemeIteration_CJK(benchmark::State& state) {
         }
         benchmark::DoNotOptimize(n);
     }
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_GraphemeIteration_CJK);
+BENCHMARK(BM_GraphemeIteration_CJK)->Name("String.GraphemeIteration/txt/cjk/1k");
 
 static void BM_CodepointIteration_CJK(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kCJK1k);
+    const auto& input = texere_bench::inputs::cjk_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         std::size_t n = 0;
         for (auto cp : s.codepoints()) {
@@ -111,89 +98,99 @@ static void BM_CodepointIteration_CJK(benchmark::State& state) {
         }
         benchmark::DoNotOptimize(n);
     }
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_CodepointIteration_CJK);
+BENCHMARK(BM_CodepointIteration_CJK)->Name("String.CodepointIteration/txt/cjk/1k");
 
 // ============================================================================
 // from_utf8_lossy
 // ============================================================================
 
 static void BM_FromUtf8Lossy_ASCII(benchmark::State& state) {
-    for (auto _ : state) {
-        auto r = string::from_utf8_lossy(kAscii1k);
-        benchmark::DoNotOptimize(r);
-    }
-    state.SetBytesProcessed(state.iterations() * kAscii1k.size());
-}
-BENCHMARK(BM_FromUtf8Lossy_ASCII);
-
-static void BM_FromUtf8Lossy_WithInvalidBytes(benchmark::State& state) {
-    std::string input = kAscii1k;
-    input[100] = '\x80';
-    input[500] = '\xfe';
+    const auto& input = texere_bench::inputs::ascii_x_1k();
     for (auto _ : state) {
         auto r = string::from_utf8_lossy(input);
         benchmark::DoNotOptimize(r);
     }
-    state.SetBytesProcessed(state.iterations() * input.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_FromUtf8Lossy_WithInvalidBytes);
+BENCHMARK(BM_FromUtf8Lossy_ASCII)->Name("String.FromUtf8Lossy/txt/ascii/1k");
+
+static void BM_FromUtf8Lossy_WithInvalidBytes(benchmark::State& state) {
+    const auto& input = texere_bench::inputs::invalid_mixed_1k();
+    for (auto _ : state) {
+        auto r = string::from_utf8_lossy(input);
+        benchmark::DoNotOptimize(r);
+    }
+    texere_bench::set_bytes_processed(state, input.size());
+}
+BENCHMARK(BM_FromUtf8Lossy_WithInvalidBytes)->Name("String.FromUtf8Lossy/txt/invalid_mixed/1k");
 
 // ============================================================================
 // grapheme_at(n) – O(n) seek
 // ============================================================================
 
 static void BM_GraphemeAt_Begin_ASCII(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAscii1k);
+    const auto& input = texere_bench::inputs::ascii_x_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         benchmark::DoNotOptimize(s.grapheme_at(0));
     }
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_GraphemeAt_Begin_ASCII);
+BENCHMARK(BM_GraphemeAt_Begin_ASCII)->Name("String.GraphemeAt/txt/ascii_begin/1k");
 
 static void BM_GraphemeAt_End_ASCII(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAscii1k);
+    const auto& input = texere_bench::inputs::ascii_x_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         benchmark::DoNotOptimize(s.grapheme_at(999));
     }
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_GraphemeAt_End_ASCII);
+BENCHMARK(BM_GraphemeAt_End_ASCII)->Name("String.GraphemeAt/txt/ascii_end/1k");
 
 // ============================================================================
 // Conversion
 // ============================================================================
 
 static void BM_ToStdString(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAscii1k);
+    const auto& input = texere_bench::inputs::ascii_x_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto copy = s.to_std_string();
         benchmark::DoNotOptimize(copy);
     }
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ToStdString);
+BENCHMARK(BM_ToStdString)->Name("String.ToStdString/txt/ascii/1k");
 
 static void BM_ToStdStringView(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAscii1k);
+    const auto& input = texere_bench::inputs::ascii_x_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto sv = s.to_std_string_view();
         benchmark::DoNotOptimize(sv);
     }
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ToStdStringView);
+BENCHMARK(BM_ToStdStringView)->Name("String.ToStdStringView/txt/ascii/1k");
 
 // ============================================================================
 // Byte iteration
 // ============================================================================
 
 static void BM_ByteIteration_CJK(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kCJK1k);
+    const auto& input = texere_bench::inputs::cjk_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         std::size_t n = 0;
         for (auto b : s.bytes()) {
-            benchmark::DoNotOptimize(b); ++n;
+            benchmark::DoNotOptimize(b);
+            ++n;
         }
         benchmark::DoNotOptimize(n);
     }
-    state.SetBytesProcessed(state.iterations() * kCJK1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ByteIteration_CJK);
+BENCHMARK(BM_ByteIteration_CJK)->Name("String.ByteIteration/txt/cjk/1k");

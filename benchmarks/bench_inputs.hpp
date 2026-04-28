@@ -94,6 +94,16 @@ inline const std::string& invalid_continuation_1k() {
     return s;
 }
 
+inline const std::string& invalid_mixed_1k() {
+    static const std::string s = []() {
+        std::string out = ascii_x_1k();
+        out[100] = '\x80';
+        out[500] = '\xfe';
+        return out;
+    }();
+    return s;
+}
+
 inline const std::string& nfd_e_acute_1k() {
     static const std::string s = []() {
         std::string out;
