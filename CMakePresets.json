@@ -1,0 +1,134 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name": "default",
+            "displayName": "Debug + tests",
+            "description": "Debug build with tests enabled (default dev workflow)",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "TEXERE_BUILD_TESTS": "ON",
+                "TEXERE_BUILD_BENCHMARKS": "OFF",
+                "TEXERE_USE_SIMDUTF": "ON",
+                "TEXERE_USE_UNIALGO": "ON",
+                "TEXERE_USE_FMT": "OFF"
+            }
+        },
+        {
+            "name": "release",
+            "displayName": "Release",
+            "description": "Release build with all optimizations, no tests",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "TEXERE_BUILD_TESTS": "OFF",
+                "TEXERE_BUILD_BENCHMARKS": "OFF",
+                "TEXERE_USE_SIMDUTF": "ON",
+                "TEXERE_USE_UNIALGO": "ON"
+            }
+        },
+        {
+            "name": "ci",
+            "displayName": "CI (Release + tests)",
+            "description": "Matches CI pipeline: Release build with tests",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "TEXERE_BUILD_TESTS": "ON",
+                "TEXERE_BUILD_BENCHMARKS": "OFF",
+                "TEXERE_USE_SIMDUTF": "ON",
+                "TEXERE_USE_UNIALGO": "ON"
+            }
+        },
+        {
+            "name": "coverage",
+            "displayName": "Coverage (Debug + --coverage)",
+            "description": "Debug build with coverage flags for lcov/Codecov",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-coverage",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_FLAGS": "--coverage",
+                "TEXERE_BUILD_TESTS": "ON",
+                "TEXERE_BUILD_BENCHMARKS": "OFF",
+                "TEXERE_USE_SIMDUTF": "ON",
+                "TEXERE_USE_UNIALGO": "ON"
+            }
+        },
+        {
+            "name": "benchmark",
+            "displayName": "Benchmark (Release + benchmarks)",
+            "description": "Release build with benchmarks, no tests",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-bench",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "TEXERE_BUILD_TESTS": "OFF",
+                "TEXERE_BUILD_BENCHMARKS": "ON",
+                "TEXERE_USE_SIMDUTF": "ON",
+                "TEXERE_USE_UNIALGO": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "default",
+            "configurePreset": "default"
+        },
+        {
+            "name": "release",
+            "configurePreset": "release"
+        },
+        {
+            "name": "ci",
+            "configurePreset": "ci"
+        },
+        {
+            "name": "coverage",
+            "configurePreset": "coverage"
+        },
+        {
+            "name": "benchmark",
+            "configurePreset": "benchmark"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "default",
+            "configurePreset": "default",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": false
+            }
+        },
+        {
+            "name": "ci",
+            "configurePreset": "ci",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": false
+            }
+        },
+        {
+            "name": "coverage",
+            "configurePreset": "coverage",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": false
+            }
+        }
+    ]
+}
