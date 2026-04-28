@@ -149,19 +149,35 @@
     <script src="data.js"></script>
     <script>
       (function() {
-        const COLORS = [
-          '#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4',
-          '#42d4f4', '#f032e6', '#bfef45', '#fabed4', '#469990',
-          '#dcbeff', '#9a6324', '#fffac8', '#800000', '#aaffc3',
-          '#808000', '#ffd8b1', '#000075', '#a9a9a9', '#e6beff',
+        // Colors: odd indices for naive (lighter), even for txt (solid)
+        const IMPL_COLORS = [
+          ['#4363d8', '#4363d8' + '40'],  // blue:  txt solid, naive light
+          ['#e6194b', '#e6194b' + '40'],  // red
+          ['#3cb44b', '#3cb44b' + '40'],  // green
+          ['#f58231', '#f58231' + '40'],  // orange
+          ['#911eb4', '#911eb4' + '40'],  // purple
         ];
 
-        // Parse "BM_Operation_Scenario" → { operation, scenario }
+        // Parse benchmark name.
+        // BM_Naive_ToUpper_ASCII_Lower →
+        //   { operation: "ToUpper", scenario: "ASCII_Lower", isNaive: true }
+        // BM_ToUpper_ASCII_Lower →
+        //   { operation: "ToUpper", scenario: "ASCII_Lower", isNaive: false }
         function parseName(name) {
           const s = name.replace(/^BM_/, '');
-          const i = s.lastIndexOf('_');
-          if (i === -1) return { operation: s, scenario: '' };
-          return { operation: s.substring(0, i), scenario: s.substring(i + 1) };
+          let isNaive = false;
+          let opStr = s;
+          if (s.startsWith('Naive_')) {
+            isNaive = true;
+            opStr = s.slice(6); // remove "Naive_"
+          }
+          const i = opStr.lastIndexOf('_');
+          if (i === -1) return { operation: opStr, scenario: '', isNaive };
+          return {
+            operation: opStr.substring(0, i),
+            scenario: opStr.substring(i + 1),
+            isNaive,
+          };
         }
 
         function formatScenario(name) {
@@ -174,13 +190,6 @@
           return name
             .replace(/_/g, ' ')
             .replace(/\b\w/g, c => c.toUpperCase());
-        }
-
-        function formatValue(v, unit) {
-          if (v >= 1000) return v.toFixed(1);
-          if (v >= 1) return v.toFixed(3);
-          if (v >= 0.001) return (v * 1000).toFixed(3) + 'm';
-          return v.toExponential(3);
         }
 
         function fmtTime(d) {
@@ -234,24 +243,29 @@
           document.getElementById('total-benches').textContent = latestByName.size;
           document.getElementById('latest-date').textContent = fmtTime(maxDate);
 
-          // Group by operation
+          // Group by normalized operation (strip Naive_ prefix before grouping)
+          // Each group contains both naive and non-naive items.
+          // Key: operation -> [{ bench, scenario, isNaive }]
           const groups = new Map();
           for (const [name, bench] of latestByName) {
-            const { operation, scenario } = parseName(name);
+            const { operation, scenario, isNaive } = parseName(name);
             if (!groups.has(operation)) {
-              groups.set(operation, []);
+              groups.set(operation, { items: [], hasNaive: false, hasTxt: false });
             }
-            groups.get(operation).push({ benchName: name, bench, scenario: scenario || name });
+            const g = groups.get(operation);
+            g.items.push({ benchName: name, bench, scenario: scenario || name, isNaive });
+            if (isNaive) g.hasNaive = true;
+            else g.hasTxt = true;
           }
 
           document.getElementById('total-groups').textContent = groups.size;
 
           // Sort groups: largest first
           const sortedGroups = Array.from(groups.entries())
-            .map(([op, items]) => ({ operation: op, items }))
+            .map(([op, g]) => ({ operation: op, items: g.items, hasNaive: g.hasNaive, hasTxt: g.hasTxt }))
             .sort((a, b) => b.items.length - a.items.length);
 
-          // Filter out groups with only 1 item — show them as 'single' cards
+          // Filter: groups with 2+ items get bar charts; singles get cards
           const multiGroups = sortedGroups.filter(g => g.items.length >= 2);
           const singleItems = sortedGroups.filter(g => g.items.length === 1)
             .flatMap(g => g.items);
@@ -277,8 +291,47 @@
             unitHint.textContent = 'Unit: ' + unit + (unit.includes('ns/iter') ? ' (lower is better)' : '');
             card.appendChild(unitHint);
 
+            // Legend when both naive and txt exist
+            if (group.hasNaive && group.hasTxt) {
+              const legend = document.createElement('div');
+              legend.style.cssText = 'font-size:0.75rem;margin:0 0 8px 0;display:flex;gap:16px;';
+              legend.innerHTML =
+                '<span><span style="display:inline-block;width:12px;height:12px;background:' + IMPL_COLORS[0][0] + ';margin-right:4px;border-radius:2px;"></span>txt (uni_algo/simdutf)</span>' +
+                '<span><span style="display:inline-block;width:12px;height:12px;background:' + IMPL_COLORS[0][1] + ';margin-right:4px;border-radius:2px;border:1px solid ' + IMPL_COLORS[0][0] + ';"></span>naive baseline</span>';
+              card.appendChild(legend);
+            }
+
             // Sort by value ascending (lower is better for ns/iter)
             const sorted = [...group.items].sort((a, b) => a.bench.value - b.bench.value);
+
+            // Datasets: one bucket per unique scenario name (without impl prefix)
+            // We use a map: scenario -> { txtValue, naiveValue, both }
+            // Then render as two datasets on the same chart.
+            const scenarioMap = new Map();
+            for (const item of sorted) {
+              const key = item.scenario;
+              if (!scenarioMap.has(key)) {
+                scenarioMap.set(key, { txt: null, naive: null });
+              }
+              const entry = scenarioMap.get(key);
+              if (item.isNaive) entry.naive = item;
+              else entry.txt = item;
+            }
+
+            // Build chart data
+            const scenarioKeys = Array.from(scenarioMap.keys());
+            const txtValues = scenarioKeys.map(k => scenarioMap.get(k).txt ? scenarioMap.get(k).txt.bench.value : null);
+            const naiveValues = scenarioKeys.map(k => scenarioMap.get(k).naive ? scenarioMap.get(k).naive.bench.value : null);
+
+            // Build labels with implementation tags
+            const labels = scenarioKeys.map(k => {
+              const e = scenarioMap.get(k);
+              let tag = '';
+              if (e.txt && e.naive) tag = ' [txt]';
+              else if (e.txt && !e.naive) tag = ' [txt]';
+              else if (!e.txt && e.naive) tag = ' [naive]';
+              return formatScenario(k) + tag;
+            });
 
             const wrap = document.createElement('div');
             wrap.className = 'chart-wrap';
@@ -287,25 +340,48 @@
             const canvas = document.createElement('canvas');
             wrap.appendChild(canvas);
 
-            const labels = sorted.map(i => formatScenario(i.scenario));
-            const values = sorted.map(i => i.bench.value);
-            const colorPool = COLORS.slice();
+            const datasets = [];
+            let colorIdx = 0;
+
+            if (group.hasTxt) {
+              const c = IMPL_COLORS[colorIdx % IMPL_COLORS.length][0];
+              colorIdx++;
+              datasets.push({
+                label: 'txt',
+                data: txtValues,
+                backgroundColor: c,
+                borderColor: c,
+                borderWidth: 1,
+              });
+            }
+            if (group.hasNaive) {
+              const c = IMPL_COLORS[colorIdx % IMPL_COLORS.length];
+              datasets.push({
+                label: 'naive',
+                data: naiveValues,
+                backgroundColor: c[1],
+                borderColor: c[0],
+                borderWidth: 1,
+                borderDash: [2, 2],
+              });
+            }
+
+            // Click handler: collect all items for index lookup
+            const scenarioItems = scenarioKeys.map(k => {
+              const e = scenarioMap.get(k);
+              return e.naive || e.txt; // prefer naive for click target
+            });
 
             new Chart(canvas, {
               type: 'horizontalBar',
               data: {
                 labels,
-                datasets: [{
-                  data: values,
-                  backgroundColor: values.map((_, idx) => colorPool[idx % colorPool.length] + '80'),
-                  borderColor: values.map((_, idx) => colorPool[idx % colorPool.length]),
-                  borderWidth: 1,
-                }],
+                datasets,
               },
               options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                legend: { display: false },
+                legend: { display: datasets.length > 1 },
                 title: {
                   display: true,
                   text: '' + (unit.includes('ns/iter') ? 'Lower is better' : ''),
@@ -325,27 +401,35 @@
                   callbacks: {
                     label: function(item) {
                       const idx = item.index;
-                      const bench = sorted[idx].bench;
-                      let label = bench.value.toFixed(3) + ' ' + bench.unit;
-                      if (bench.extra) {
-                        const m = bench.extra.match(/iterations:\s*(\d+)/);
+                      const e = scenarioMap.get(scenarioKeys[idx]);
+                      const isNaiveDS = item.datasetIndex === 1;
+                      const bench = isNaiveDS ? e.naive : e.txt;
+                      if (!bench) return '';
+                      let label = bench.bench.value.toFixed(3) + ' ' + bench.bench.unit;
+                      if (bench.bench.extra) {
+                        const m = bench.bench.extra.match(/iterations:\s*(\d+)/);
                         if (m) label += '  |  ' + Number(m[1]).toLocaleString() + ' iters';
                       }
                       return label;
                     },
                     afterTitle: function(items) {
                       const idx = items[0].index;
-                      const bench = sorted[idx].bench;
-                      return bench.benchName;
+                      const e = scenarioMap.get(scenarioKeys[idx]);
+                      const isNaiveDS = items[0].datasetIndex === 1;
+                      const bench = isNaiveDS ? e.naive : e.txt;
+                      return bench ? bench.benchName : '';
                     },
                   },
                 },
                 onClick: function(_mouseEvent, activeElems) {
                   if (activeElems.length === 0) return;
                   const idx = activeElems[0]._index;
-                  const bench = sorted[idx].bench;
-                  const url = bench.commit.url;
-                  if (url) window.open(url, '_blank');
+                  const e = scenarioMap.get(scenarioKeys[idx]);
+                  const isNaiveDS = activeElems[0].datasetIndex === 1;
+                  const bench = isNaiveDS ? e.naive : e.txt;
+                  if (bench && bench.bench.commit.url) {
+                    window.open(bench.bench.commit.url, '_blank');
+                  }
                 },
               },
             });
@@ -369,7 +453,7 @@
 
               const nameEl = document.createElement('div');
               nameEl.className = 'name';
-              nameEl.textContent = item.bench.benchName.replace(/^BM_/, '');
+              nameEl.textContent = item.benchName.replace(/^BM_/, '');
               card.appendChild(nameEl);
 
               const valEl = document.createElement('div');
