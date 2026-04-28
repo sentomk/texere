@@ -1,0 +1,44 @@
+name: Bench
+
+on:
+  push:
+    branches:
+      - 'bench/**'
+  workflow_dispatch:
+
+jobs:
+  benchmark-smoke:
+    name: Benchmark Smoke (Linux GCC)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DTEXERE_BUILD_TESTS=OFF \
+            -DTEXERE_BUILD_BENCHMARKS=ON
+        env:
+          CXX: g++
+
+      - name: Build benchmark target
+        run: cmake --build build --target texere_bench --config Release
+
+      - name: List benchmark names
+        run: ./build/benchmarks/texere_bench --benchmark_list_tests
+
+      - name: Run short benchmark smoke
+        run: |
+          ./build/benchmarks/texere_bench \
+            --benchmark_min_time=0.01 \
+            --benchmark_format=json \
+            > benchmark_smoke.json
+
+      - name: Upload benchmark smoke artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-smoke-json
+          path: benchmark_smoke.json
