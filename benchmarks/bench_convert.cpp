@@ -205,13 +205,15 @@ static std::string naive_from_wstring(std::wstring_view ws) {
         char32_t cp;
         if constexpr (sizeof(wchar_t) == 2) {
             wchar_t w = ws[i];
-            if (w >= 0xD800 && w <= 0xDBFF) {
-                char32_t hi = w - 0xD800;
+            if (w >= 0xD800 && w <= 0xDBFF &&
+                i + 1 < ws.size() &&
+                ws[i + 1] >= 0xDC00 && ws[i + 1] <= 0xDFFF) {
+                char32_t hi = static_cast<char32_t>(w - 0xD800);
                 ++i;
-                char32_t lo = ws[i] - 0xDC00;
+                char32_t lo = static_cast<char32_t>(ws[i] - 0xDC00);
                 cp = 0x10000 + (hi << 10) + lo;
             } else {
-                cp = w;
+                cp = static_cast<char32_t>(w);
             }
         } else {
             cp = static_cast<char32_t>(ws[i]);
