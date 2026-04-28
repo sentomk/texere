@@ -1,0 +1,75 @@
+# texere C++17 Unicode string library
+# See https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+
+BasedOnStyle: Google
+
+# Match project conventions: 4-space indent, not 2
+IndentWidth: 4
+AccessModifierOffset: -4
+
+# Keep within readable limits
+ColumnLimit: 120
+
+# Pointer/reference alignment — left (`const char*` not `const char *`)
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# Brace placement — attached (Google default is Attach which matches)
+BreakBeforeBraces: Attach
+
+# Namespace contents indented
+NamespaceIndentation: All
+
+# No empty line before/after certain blocks
+MaxEmptyLinesToKeep: 2
+
+# Short functions on single line where possible
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+
+# Keep comments as-is
+ReflowComments: false
+
+# Sort includes
+IncludeCategories:
+  - Regex: "^<texere/"
+    Priority: 1
+  - Regex: "^\"texere/"
+    Priority: 1
+  - Regex: "^<[^t]"
+    Priority: 3
+  - Regex: "^<[a-z]"
+    Priority: 3
+  - Regex: "^\""
+    Priority: 2
+SortIncludes: CaseInsensitive
+
+# Constructor initializer list
+ConstructorInitializerIndentWidth: 4
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+
+# No alignments that cause noisy diffs
+AlignAfterOpenBracket: DontAlign
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignOperands: DontAlign
+
+# Penalties
+PenaltyReturnTypeOnItsOwnLine: 60
+PenaltyExcessCharacter: 10
+
+# Always break template declarations
+AlwaysBreakTemplateDeclarations: Yes
+
+# Keep empty lines at end of blocks
+FixNamespaceComments: true
+
+# Allow short case labels to fall through
+AllowShortCaseLabelsOnASingleLine: false
+
+# Attributes
+AttributeMacros:
+  - '[[nodiscard]]'
+  - '[[maybe_unused]]'
