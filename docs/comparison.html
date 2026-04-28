@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes" />
+    <style>
+      html {
+        font-family: BlinkMacSystemFont,-apple-system,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+        -webkit-font-smoothing: antialiased;
+        background-color: #fff;
+        font-size: 16px;
+      }
+      body {
+        color: #4a4a4a;
+        margin: 8px;
+        font-size: 1em;
+        font-weight: 400;
+      }
+      header {
+        margin-bottom: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      main {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      a { color: #3273dc; cursor: pointer; text-decoration: none; }
+      a:hover { color: #000; }
+      .header-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .title { font-size: 1.5rem; font-weight: 600; margin: 0; }
+      .subtitle { color: #666; font-size: 0.85rem; }
+      .nav-link { font-size: 0.9rem; }
+      .summary-bar {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding: 12px 16px;
+        background: #f5f7fa;
+        border-radius: 8px;
+        margin: 8px 0;
+      }
+      .summary-stat {
+        display: flex;
+        flex-direction: column;
+      }
+      .summary-stat .value { font-size: 1.1rem; font-weight: 600; }
+      .summary-stat .label { font-size: 0.75rem; color: #666; }
+      .group-card {
+        margin: 12px 0;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px;
+      }
+      .group-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 0 0 4px 0;
+      }
+      .group-desc {
+        font-size: 0.8rem;
+        color: #666;
+        margin: 0 0 12px 0;
+      }
+      .group-unit {
+        font-size: 0.75rem;
+        color: #888;
+        margin: 0 0 8px 0;
+      }
+      .chart-wrap {
+        position: relative;
+        width: 100%;
+        max-width: 900px;
+      }
+      .single-bench-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 8px 0;
+      }
+      .single-bench-card {
+        background: #fafafa;
+        border: 1px solid #eee;
+        border-radius: 6px;
+        padding: 12px 16px;
+        min-width: 200px;
+      }
+      .single-bench-card .name {
+        font-size: 0.8rem;
+        color: #666;
+        margin-bottom: 4px;
+      }
+      .single-bench-card .value {
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+      .single-bench-card .unit {
+        font-size: 0.75rem;
+        color: #888;
+      }
+      footer {
+        margin-top: 24px;
+        padding: 12px 0;
+        font-size: 0.75rem;
+        color: #888;
+        border-top: 1px solid #eee;
+      }
+    </style>
+    <title>Benchmark Cross-Scenario Comparison</title>
+  </head>
+  <body>
+    <header>
+      <div class="header-row">
+        <h1 class="title">Cross-Scenario Comparison</h1>
+        <span class="nav-link"><a href="index.html">← Back to Time Series</a></span>
+      </div>
+      <div class="subtitle">
+        Compare benchmark values across different input types / scenarios
+        for the same operation. Based on the latest benchmark run.
+      </div>
+      <div class="summary-bar" id="summary-bar">
+        <div class="summary-stat">
+          <span class="value" id="total-groups">-</span>
+          <span class="label">operation groups</span>
+        </div>
+        <div class="summary-stat">
+          <span class="value" id="total-benches">-</span>
+          <span class="label">benchmarks</span>
+        </div>
+        <div class="summary-stat">
+          <span class="value" id="latest-date">-</span>
+          <span class="label">latest run</span>
+        </div>
+      </div>
+    </header>
+    <main id="main"></main>
+    <footer>
+      Powered by <a rel="noopener" href="https://github.com/marketplace/actions/continuous-benchmark">github-action-benchmark</a> &amp; <a rel="noopener" href="https://www.chartjs.org/">Chart.js</a>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.2/dist/Chart.min.js"></script>
+    <script src="data.js"></script>
+    <script>
+      (function() {
+        const COLORS = [
+          '#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4',
+          '#42d4f4', '#f032e6', '#bfef45', '#fabed4', '#469990',
+          '#dcbeff', '#9a6324', '#fffac8', '#800000', '#aaffc3',
+          '#808000', '#ffd8b1', '#000075', '#a9a9a9', '#e6beff',
+        ];
+
+        // Parse "BM_Operation_Scenario" → { operation, scenario }
+        function parseName(name) {
+          const s = name.replace(/^BM_/, '');
+          const i = s.lastIndexOf('_');
+          if (i === -1) return { operation: s, scenario: '' };
+          return { operation: s.substring(0, i), scenario: s.substring(i + 1) };
+        }
+
+        function formatScenario(name) {
+          return name
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        function formatOperation(name) {
+          return name
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        function formatValue(v, unit) {
+          if (v >= 1000) return v.toFixed(1);
+          if (v >= 1) return v.toFixed(3);
+          if (v >= 0.001) return (v * 1000).toFixed(3) + 'm';
+          return v.toExponential(3);
+        }
+
+        function fmtTime(d) {
+          const date = new Date(d);
+          return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+
+        function init() {
+          const data = window.BENCHMARK_DATA;
+          if (!data) {
+            document.getElementById('main').textContent =
+              'No benchmark data found. Run benchmarks first.';
+            return;
+          }
+
+          // Collect all benchmark results from all entries
+          const allBenches = [];
+          for (const entryName of Object.keys(data.entries)) {
+            for (const entry of data.entries[entryName]) {
+              for (const bench of entry.benches) {
+                allBenches.push({
+                  commit: entry.commit,
+                  date: entry.date,
+                  tool: entry.tool,
+                  name: bench.name,
+                  value: bench.value,
+                  unit: bench.unit,
+                  extra: bench.extra,
+                });
+              }
+            }
+          }
+
+          if (allBenches.length === 0) {
+            document.getElementById('main').textContent = 'No benchmarks found.';
+            return;
+          }
+
+          // Find latest entry per benchmark name
+          const latestByName = new Map();
+          for (const b of allBenches) {
+            const existing = latestByName.get(b.name);
+            if (!existing || b.date > existing.date) {
+              latestByName.set(b.name, b);
+            }
+          }
+
+          // Summary stats
+          const allDates = allBenches.map(b => b.date);
+          const maxDate = Math.max(...allDates);
+          document.getElementById('total-benches').textContent = latestByName.size;
+          document.getElementById('latest-date').textContent = fmtTime(maxDate);
+
+          // Group by operation
+          const groups = new Map();
+          for (const [name, bench] of latestByName) {
+            const { operation, scenario } = parseName(name);
+            if (!groups.has(operation)) {
+              groups.set(operation, []);
+            }
+            groups.get(operation).push({ benchName: name, bench, scenario: scenario || name });
+          }
+
+          document.getElementById('total-groups').textContent = groups.size;
+
+          // Sort groups: largest first
+          const sortedGroups = Array.from(groups.entries())
+            .map(([op, items]) => ({ operation: op, items }))
+            .sort((a, b) => b.items.length - a.items.length);
+
+          // Filter out groups with only 1 item — show them as 'single' cards
+          const multiGroups = sortedGroups.filter(g => g.items.length >= 2);
+          const singleItems = sortedGroups.filter(g => g.items.length === 1)
+            .flatMap(g => g.items);
+
+          const main = document.getElementById('main');
+
+          // --- Multi-scenario groups (bar charts) ---
+          for (const group of multiGroups) {
+            const card = document.createElement('div');
+            card.className = 'group-card';
+            main.appendChild(card);
+
+            const title = document.createElement('h2');
+            title.className = 'group-title';
+            title.textContent = formatOperation(group.operation);
+            card.appendChild(title);
+
+            // Determine unit
+            const units = new Set(group.items.map(i => i.bench.unit));
+            const unit = units.size === 1 ? group.items[0].bench.unit : '(mixed units)';
+            const unitHint = document.createElement('div');
+            unitHint.className = 'group-unit';
+            unitHint.textContent = 'Unit: ' + unit + (unit.includes('ns/iter') ? ' (lower is better)' : '');
+            card.appendChild(unitHint);
+
+            // Sort by value ascending (lower is better for ns/iter)
+            const sorted = [...group.items].sort((a, b) => a.bench.value - b.bench.value);
+
+            const wrap = document.createElement('div');
+            wrap.className = 'chart-wrap';
+            card.appendChild(wrap);
+
+            const canvas = document.createElement('canvas');
+            wrap.appendChild(canvas);
+
+            const labels = sorted.map(i => formatScenario(i.scenario));
+            const values = sorted.map(i => i.bench.value);
+            const colorPool = COLORS.slice();
+
+            new Chart(canvas, {
+              type: 'horizontalBar',
+              data: {
+                labels,
+                datasets: [{
+                  data: values,
+                  backgroundColor: values.map((_, idx) => colorPool[idx % colorPool.length] + '80'),
+                  borderColor: values.map((_, idx) => colorPool[idx % colorPool.length]),
+                  borderWidth: 1,
+                }],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                legend: { display: false },
+                title: {
+                  display: true,
+                  text: '' + (unit.includes('ns/iter') ? 'Lower is better' : ''),
+                  fontSize: 12,
+                  fontColor: '#888',
+                },
+                scales: {
+                  xAxes: [{
+                    scaleLabel: { display: true, labelString: unit },
+                    ticks: { beginAtZero: true },
+                  }],
+                  yAxes: [{
+                    scaleLabel: { display: true, labelString: 'Scenario' },
+                  }],
+                },
+                tooltips: {
+                  callbacks: {
+                    label: function(item) {
+                      const idx = item.index;
+                      const bench = sorted[idx].bench;
+                      let label = bench.value.toFixed(3) + ' ' + bench.unit;
+                      if (bench.extra) {
+                        const m = bench.extra.match(/iterations:\s*(\d+)/);
+                        if (m) label += '  |  ' + Number(m[1]).toLocaleString() + ' iters';
+                      }
+                      return label;
+                    },
+                    afterTitle: function(items) {
+                      const idx = items[0].index;
+                      const bench = sorted[idx].bench;
+                      return bench.benchName;
+                    },
+                  },
+                },
+                onClick: function(_mouseEvent, activeElems) {
+                  if (activeElems.length === 0) return;
+                  const idx = activeElems[0]._index;
+                  const bench = sorted[idx].bench;
+                  const url = bench.commit.url;
+                  if (url) window.open(url, '_blank');
+                },
+              },
+            });
+          }
+
+          // --- Single-scenario benchmarks (as info cards) ---
+          if (singleItems.length > 0) {
+            const heading = document.createElement('h2');
+            heading.style.cssText = 'font-size:1rem;margin:16px 0 8px;color:#666;';
+            heading.textContent = 'Single-scenario benchmarks (no comparison group)';
+            main.appendChild(heading);
+
+            const grid = document.createElement('div');
+            grid.className = 'single-bench-grid';
+            main.appendChild(grid);
+
+            for (const item of singleItems) {
+              const card = document.createElement('div');
+              card.className = 'single-bench-card';
+              grid.appendChild(card);
+
+              const nameEl = document.createElement('div');
+              nameEl.className = 'name';
+              nameEl.textContent = item.bench.benchName.replace(/^BM_/, '');
+              card.appendChild(nameEl);
+
+              const valEl = document.createElement('div');
+              valEl.className = 'value';
+              valEl.textContent = item.bench.value.toFixed(3);
+              card.appendChild(valEl);
+
+              const unitEl = document.createElement('div');
+              unitEl.className = 'unit';
+              unitEl.textContent = item.bench.unit;
+              card.appendChild(unitEl);
+            }
+          }
+        }
+
+        init();
+      })();
+    </script>
+  </body>
+</html>
