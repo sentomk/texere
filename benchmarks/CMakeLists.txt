@@ -15,6 +15,7 @@ add_executable(texere_bench
     bench_normalize.cpp
     bench_case.cpp
     bench_convert.cpp
+    bench_validate_utf8.cpp
 )
 
 target_link_libraries(texere_bench PRIVATE
