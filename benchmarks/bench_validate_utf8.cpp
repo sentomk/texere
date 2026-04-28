@@ -12,6 +12,9 @@
 #include <benchmark/benchmark.h>
 #include <texere/string.hpp>
 
+#include "bench_framework.hpp"
+#include "bench_inputs.hpp"
+
 using namespace txt;
 
 // ============================================================================
@@ -56,144 +59,109 @@ static bool naive_validate_utf8(const char* data, std::size_t len) {
 }
 
 // ============================================================================
-// Input data
-// ============================================================================
-
-// 1000 ASCII bytes
-static const std::string kAscii1k = []() {
-    std::string s(1000, 'x');
-    return s;
-}();
-
-// 1000 CJK characters (3 bytes each = 3000 bytes)
-static const std::string kCJK1k = []() {
-    std::string s;
-    s.reserve(3000);
-    for (int i = 0; i < 1000; ++i) s += "\xe4\xb8\xad";
-    return s;
-}();
-
-// Mixed ASCII + CJK (2000 bytes)
-static const std::string kMixed1k = []() {
-    std::string s;
-    s.reserve(2000);
-    for (int i = 0; i < 500; ++i) s += 'a';
-    for (int i = 0; i < 500; ++i) s += "\xe4\xb8\xad";
-    return s;
-}();
-
-// 100 emoji with ZWJ sequences (1800 bytes)
-static const std::string kEmoji100 = []() {
-    const char family[] =
-        "\xf0\x9f\x91\xa8\xe2\x80\x8d"
-        "\xf0\x9f\x91\xa9\xe2\x80\x8d"
-        "\xf0\x9f\x91\xa7";
-    std::string s;
-    for (int i = 0; i < 100; ++i) s += family;
-    return s;
-}();
-
-// Invalid UTF-8: ASCII with a broken continuation byte
-static const std::string kInvalid_Continuation = []() {
-    std::string s = kAscii1k;
-    s[500] = '\x80';
-    return s;
-}();
-
-// ============================================================================
 // Benchmarks: string::from_utf8  (simdutf backend)
 // ============================================================================
 
 static void BM_FromUtf8_ASCII(benchmark::State& state) {
+    const auto& input = texere_bench::inputs::ascii_x_1k();
     for (auto _ : state) {
-        auto r = string::from_utf8(kAscii1k);
+        auto r = string::from_utf8(input);
         benchmark::DoNotOptimize(r);
     }
-    state.SetBytesProcessed(state.iterations() * kAscii1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_FromUtf8_ASCII);
+BENCHMARK(BM_FromUtf8_ASCII)->Name("Validate/txt/ascii/1k");
 
 static void BM_FromUtf8_CJK(benchmark::State& state) {
+    const auto& input = texere_bench::inputs::cjk_1k();
     for (auto _ : state) {
-        auto r = string::from_utf8(kCJK1k);
+        auto r = string::from_utf8(input);
         benchmark::DoNotOptimize(r);
     }
-    state.SetBytesProcessed(state.iterations() * kCJK1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_FromUtf8_CJK);
+BENCHMARK(BM_FromUtf8_CJK)->Name("Validate/txt/cjk/1k");
 
 static void BM_FromUtf8_Mixed(benchmark::State& state) {
+    const auto& input = texere_bench::inputs::mixed_ascii_cjk_1k();
     for (auto _ : state) {
-        auto r = string::from_utf8(kMixed1k);
+        auto r = string::from_utf8(input);
         benchmark::DoNotOptimize(r);
     }
-    state.SetBytesProcessed(state.iterations() * kMixed1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_FromUtf8_Mixed);
+BENCHMARK(BM_FromUtf8_Mixed)->Name("Validate/txt/mixed_ascii_cjk/1k");
 
 static void BM_FromUtf8_Emoji(benchmark::State& state) {
+    const auto& input = texere_bench::inputs::emoji_family_100();
     for (auto _ : state) {
-        auto r = string::from_utf8(kEmoji100);
+        auto r = string::from_utf8(input);
         benchmark::DoNotOptimize(r);
     }
-    state.SetBytesProcessed(state.iterations() * kEmoji100.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_FromUtf8_Emoji);
+BENCHMARK(BM_FromUtf8_Emoji)->Name("Validate/txt/emoji_zwj/100");
 
 static void BM_FromUtf8_Invalid(benchmark::State& state) {
+    const auto& input = texere_bench::inputs::invalid_continuation_1k();
     for (auto _ : state) {
-        auto r = string::from_utf8(kInvalid_Continuation);
+        auto r = string::from_utf8(input);
         benchmark::DoNotOptimize(r);
     }
-    state.SetBytesProcessed(state.iterations() * kInvalid_Continuation.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_FromUtf8_Invalid);
+BENCHMARK(BM_FromUtf8_Invalid)->Name("Validate/txt/invalid_continuation/1k");
 
 // ============================================================================
 // Benchmarks: naive scalar validation
 // ============================================================================
 
 static void BM_NaiveValidate_ASCII(benchmark::State& state) {
+    const auto& input = texere_bench::inputs::ascii_x_1k();
     for (auto _ : state) {
-        auto ok = naive_validate_utf8(kAscii1k.data(), kAscii1k.size());
+        auto ok = naive_validate_utf8(input.data(), input.size());
         benchmark::DoNotOptimize(ok);
     }
-    state.SetBytesProcessed(state.iterations() * kAscii1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_NaiveValidate_ASCII);
+BENCHMARK(BM_NaiveValidate_ASCII)->Name("Validate/naive/ascii/1k");
 
 static void BM_NaiveValidate_CJK(benchmark::State& state) {
+    const auto& input = texere_bench::inputs::cjk_1k();
     for (auto _ : state) {
-        auto ok = naive_validate_utf8(kCJK1k.data(), kCJK1k.size());
+        auto ok = naive_validate_utf8(input.data(), input.size());
         benchmark::DoNotOptimize(ok);
     }
-    state.SetBytesProcessed(state.iterations() * kCJK1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_NaiveValidate_CJK);
+BENCHMARK(BM_NaiveValidate_CJK)->Name("Validate/naive/cjk/1k");
 
 static void BM_NaiveValidate_Mixed(benchmark::State& state) {
+    const auto& input = texere_bench::inputs::mixed_ascii_cjk_1k();
     for (auto _ : state) {
-        auto ok = naive_validate_utf8(kMixed1k.data(), kMixed1k.size());
+        auto ok = naive_validate_utf8(input.data(), input.size());
         benchmark::DoNotOptimize(ok);
     }
-    state.SetBytesProcessed(state.iterations() * kMixed1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_NaiveValidate_Mixed);
+BENCHMARK(BM_NaiveValidate_Mixed)->Name("Validate/naive/mixed_ascii_cjk/1k");
 
 static void BM_NaiveValidate_Emoji(benchmark::State& state) {
+    const auto& input = texere_bench::inputs::emoji_family_100();
     for (auto _ : state) {
-        auto ok = naive_validate_utf8(kEmoji100.data(), kEmoji100.size());
+        auto ok = naive_validate_utf8(input.data(), input.size());
         benchmark::DoNotOptimize(ok);
     }
-    state.SetBytesProcessed(state.iterations() * kEmoji100.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_NaiveValidate_Emoji);
+BENCHMARK(BM_NaiveValidate_Emoji)->Name("Validate/naive/emoji_zwj/100");
 
 static void BM_NaiveValidate_Invalid(benchmark::State& state) {
+    const auto& input = texere_bench::inputs::invalid_continuation_1k();
     for (auto _ : state) {
-        auto ok = naive_validate_utf8(kInvalid_Continuation.data(), kInvalid_Continuation.size());
+        auto ok = naive_validate_utf8(input.data(), input.size());
         benchmark::DoNotOptimize(ok);
     }
-    state.SetBytesProcessed(state.iterations() * kInvalid_Continuation.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_NaiveValidate_Invalid);
+BENCHMARK(BM_NaiveValidate_Invalid)->Name("Validate/naive/invalid_continuation/1k");
