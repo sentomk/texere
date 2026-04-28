@@ -12,161 +12,134 @@
 #include <texere/string.hpp>
 #include <texere/convert.hpp>
 
+#include "bench_framework.hpp"
+#include "bench_inputs.hpp"
+
 #include <string>
 #include <string_view>
 
 using namespace txt;
 
 // ============================================================================
-// Helpers
-// ============================================================================
-
-// ASCII 1KB
-static const std::string kAscii1k(1000, 'a');
-
-// CJK 1000 characters (3000 bytes)
-static const std::string kCJK1k = []() {
-    std::string s;
-    s.reserve(3000);
-    for (int i = 0; i < 1000; ++i) s += "\xe4\xb8\xad";
-    return s;
-}();
-
-// Emoji 100 (4 bytes each)
-static const std::string kEmoji100 = []() {
-    std::string s;
-    s.reserve(400);
-    for (int i = 0; i < 100; ++i) s += "\xf0\x9f\x98\x80";
-    return s;
-}();
-
-// Latin-1 1KB (all bytes 0x00-0xFF)
-static const std::string kLatin1_1k = []() {
-    std::string s;
-    s.reserve(1000);
-    for (int i = 0; i < 1000; ++i) s += static_cast<char>(i % 256);
-    return s;
-}();
-
-// ============================================================================
 // to_wstring – UTF-8 → UTF-16/UTF-32
 // ============================================================================
 
 static void BM_ToWString_ASCII(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAscii1k);
+    const auto& input = texere_bench::inputs::ascii_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto ws = to_wstring(s);
         benchmark::DoNotOptimize(ws);
     }
-    state.SetBytesProcessed(state.iterations() * kAscii1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ToWString_ASCII);
+BENCHMARK(BM_ToWString_ASCII)->Name("Convert.ToWString/txt/ascii/1k");
 
 static void BM_ToWString_CJK(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kCJK1k);
+    const auto& input = texere_bench::inputs::cjk_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto ws = to_wstring(s);
         benchmark::DoNotOptimize(ws);
     }
-    state.SetBytesProcessed(state.iterations() * kCJK1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ToWString_CJK);
+BENCHMARK(BM_ToWString_CJK)->Name("Convert.ToWString/txt/cjk/1k");
 
 static void BM_ToWString_Emoji(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kEmoji100);
+    const auto& input = texere_bench::inputs::emoji_100();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto ws = to_wstring(s);
         benchmark::DoNotOptimize(ws);
     }
-    state.SetBytesProcessed(state.iterations() * kEmoji100.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ToWString_Emoji);
+BENCHMARK(BM_ToWString_Emoji)->Name("Convert.ToWString/txt/emoji/100");
 
 // ============================================================================
 // from_wstring – UTF-16 → UTF-8
 // ============================================================================
 
 static void BM_FromWString_ASCII(benchmark::State& state) {
-    std::wstring ws(1000, L'a');
+    const auto& ws = texere_bench::inputs::wide_ascii_1k();
     for (auto _ : state) {
         auto result = from_wstring(ws);
         benchmark::DoNotOptimize(result);
     }
-    state.SetBytesProcessed(state.iterations() * ws.size() * sizeof(wchar_t));
+    texere_bench::set_bytes_processed(state, ws.size() * sizeof(wchar_t));
 }
-BENCHMARK(BM_FromWString_ASCII);
+BENCHMARK(BM_FromWString_ASCII)->Name("Convert.FromWString/txt/ascii/1k");
 
 static void BM_FromWString_CJK(benchmark::State& state) {
-    std::wstring ws(1000, L'\x4e2d'); // 中
+    const auto& ws = texere_bench::inputs::wide_cjk_1k();
     for (auto _ : state) {
         auto result = from_wstring(ws);
         benchmark::DoNotOptimize(result);
     }
-    state.SetBytesProcessed(state.iterations() * ws.size() * sizeof(wchar_t));
+    texere_bench::set_bytes_processed(state, ws.size() * sizeof(wchar_t));
 }
-BENCHMARK(BM_FromWString_CJK);
+BENCHMARK(BM_FromWString_CJK)->Name("Convert.FromWString/txt/cjk/1k");
 
 static void BM_FromWString_Emoji(benchmark::State& state) {
-    // 😀 in UTF-16 = D83D DE00
-    std::wstring ws;
-    ws.reserve(200);
-    for (int i = 0; i < 100; ++i) {
-        ws += L'\xD83D';
-        ws += L'\xDE00';
-    }
+    const auto& ws = texere_bench::inputs::wide_emoji_100();
     for (auto _ : state) {
         auto result = from_wstring(ws);
         benchmark::DoNotOptimize(result);
     }
-    state.SetBytesProcessed(state.iterations() * ws.size() * sizeof(wchar_t));
+    texere_bench::set_bytes_processed(state, ws.size() * sizeof(wchar_t));
 }
-BENCHMARK(BM_FromWString_Emoji);
+BENCHMARK(BM_FromWString_Emoji)->Name("Convert.FromWString/txt/emoji/100");
 
 // ============================================================================
 // from_latin1 – ISO-8859-1 → UTF-8
 // ============================================================================
 
 static void BM_FromLatin1_ASCII(benchmark::State& state) {
+    const auto& input = texere_bench::inputs::ascii_1k();
     for (auto _ : state) {
-        auto s = from_latin1(kAscii1k);
+        auto s = from_latin1(input);
         benchmark::DoNotOptimize(s);
     }
-    state.SetBytesProcessed(state.iterations() * kAscii1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_FromLatin1_ASCII);
+BENCHMARK(BM_FromLatin1_ASCII)->Name("Convert.FromLatin1/txt/ascii/1k");
 
 static void BM_FromLatin1_FullLatin1(benchmark::State& state) {
+    const auto& input = texere_bench::inputs::latin1_1k();
     for (auto _ : state) {
-        auto s = from_latin1(kLatin1_1k);
+        auto s = from_latin1(input);
         benchmark::DoNotOptimize(s);
     }
-    state.SetBytesProcessed(state.iterations() * kLatin1_1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_FromLatin1_FullLatin1);
+BENCHMARK(BM_FromLatin1_FullLatin1)->Name("Convert.FromLatin1/txt/full_latin1/1k");
 
 // ============================================================================
 // to_latin1 – UTF-8 → ISO-8859-1
 // ============================================================================
 
 static void BM_ToLatin1_ASCII(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAscii1k);
+    const auto& input = texere_bench::inputs::ascii_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto result = to_latin1(s);
         benchmark::DoNotOptimize(result);
     }
-    state.SetBytesProcessed(state.iterations() * kAscii1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ToLatin1_ASCII);
+BENCHMARK(BM_ToLatin1_ASCII)->Name("Convert.ToLatin1/txt/ascii/1k");
 
 static void BM_ToLatin1_CJK_Fails(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kCJK1k);
+    const auto& input = texere_bench::inputs::cjk_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto result = to_latin1(s);
         benchmark::DoNotOptimize(result);
     }
-    state.SetBytesProcessed(state.iterations() * kCJK1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ToLatin1_CJK_Fails);
+BENCHMARK(BM_ToLatin1_CJK_Fails)->Name("Convert.ToLatin1/txt/cjk_fails/1k");
 
 // ============================================================================
 // Naive baselines — hand-rolled codepoint iteration for conversion
@@ -238,41 +211,43 @@ static std::string naive_from_wstring(std::wstring_view ws) {
 }
 
 static void BM_Naive_ToWString_ASCII(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAscii1k);
+    const auto& input = texere_bench::inputs::ascii_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto ws = naive_to_wstring(s.to_std_string_view());
         benchmark::DoNotOptimize(ws);
     }
-    state.SetBytesProcessed(state.iterations() * kAscii1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Naive_ToWString_ASCII);
+BENCHMARK(BM_Naive_ToWString_ASCII)->Name("Convert.ToWString/naive/ascii/1k");
 
 static void BM_Naive_ToWString_CJK(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kCJK1k);
+    const auto& input = texere_bench::inputs::cjk_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto ws = naive_to_wstring(s.to_std_string_view());
         benchmark::DoNotOptimize(ws);
     }
-    state.SetBytesProcessed(state.iterations() * kCJK1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Naive_ToWString_CJK);
+BENCHMARK(BM_Naive_ToWString_CJK)->Name("Convert.ToWString/naive/cjk/1k");
 
 static void BM_Naive_FromWString_ASCII(benchmark::State& state) {
-    std::wstring ws(1000, L'a');
+    const auto& ws = texere_bench::inputs::wide_ascii_1k();
     for (auto _ : state) {
         auto result = naive_from_wstring(ws);
         benchmark::DoNotOptimize(result);
     }
-    state.SetBytesProcessed(state.iterations() * ws.size() * sizeof(wchar_t));
+    texere_bench::set_bytes_processed(state, ws.size() * sizeof(wchar_t));
 }
-BENCHMARK(BM_Naive_FromWString_ASCII);
+BENCHMARK(BM_Naive_FromWString_ASCII)->Name("Convert.FromWString/naive/ascii/1k");
 
 static void BM_Naive_FromWString_CJK(benchmark::State& state) {
-    std::wstring ws(1000, L'\x4e2d');
+    const auto& ws = texere_bench::inputs::wide_cjk_1k();
     for (auto _ : state) {
         auto result = naive_from_wstring(ws);
         benchmark::DoNotOptimize(result);
     }
-    state.SetBytesProcessed(state.iterations() * ws.size() * sizeof(wchar_t));
+    texere_bench::set_bytes_processed(state, ws.size() * sizeof(wchar_t));
 }
-BENCHMARK(BM_Naive_FromWString_CJK);
+BENCHMARK(BM_Naive_FromWString_CJK)->Name("Convert.FromWString/naive/cjk/1k");
