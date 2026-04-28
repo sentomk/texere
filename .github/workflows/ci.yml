@@ -7,6 +7,40 @@ on:
     branches: [main]
 
 jobs:
+  branch-name:
+    name: Validate branch name
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          # Allowed prefixes
+          ALLOWED=("feat/" "fix/" "bench/" "docs/" "ci/" "test/" "refactor/" "perf/" "build/" "chore/" "alpha/")
+          # Protected branches
+          PROTECTED=("main" "master" "develop" "gh-pages")
+          VALID=false
+          for special in "${PROTECTED[@]}"; do
+            if [ "$BRANCH" = "$special" ]; then
+              VALID=true
+              break
+            fi
+          done
+          if [ "$VALID" = false ]; then
+            for prefix in "${ALLOWED[@]}"; do
+              if [[ "$BRANCH" == "$prefix"* ]]; then
+                VALID=true
+                break
+              fi
+            done
+          fi
+          if [ "$VALID" = false ]; then
+            echo "::error::Branch '$BRANCH' does not follow naming conventions."
+            echo "Allowed prefixes: feat/ fix/ bench/ docs/ ci/ test/ refactor/ perf/ build/ chore/ alpha/"
+            exit 1
+          fi
+          echo "Branch '$BRANCH' is valid."
+
   build-and-test:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
