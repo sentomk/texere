@@ -12,54 +12,13 @@
 #include <texere/string.hpp>
 #include <texere/case.hpp>
 
+#include "bench_framework.hpp"
+#include "bench_inputs.hpp"
+
 #include <string>
 #include <string_view>
 
 using namespace txt;
-
-// ============================================================================
-// Helpers
-// ============================================================================
-
-// 1000 ASCII letters
-static const std::string kAsciiLower1k = []() {
-    std::string s;
-    s.reserve(1000);
-    for (int i = 0; i < 1000; ++i) s += static_cast<char>('a' + (i % 26));
-    return s;
-}();
-
-static const std::string kAsciiMixed1k = []() {
-    std::string s;
-    s.reserve(1000);
-    for (int i = 0; i < 1000; ++i) s += static_cast<char>('A' + (i % 26));
-    return s;
-}();
-
-// 1000 CJK characters (3 bytes each, case-insensitive)
-static const std::string kCJK1k = []() {
-    std::string s;
-    s.reserve(3000);
-    for (int i = 0; i < 1000; ++i) s += "\xe4\xb8\xad"; // 中
-    return s;
-}();
-
-// Mixed ASCII + CJK
-static const std::string kMixed1k = []() {
-    std::string s;
-    s.reserve(2000);
-    for (int i = 0; i < 500; ++i) s += 'a';
-    for (int i = 0; i < 500; ++i) s += "\xe4\xb8\xad";
-    return s;
-}();
-
-// German eszett string (ß)
-static const std::string kEszett100 = []() {
-    std::string s;
-    s.reserve(500);
-    for (int i = 0; i < 100; ++i) s += "\xc3\x9f"; // ß
-    return s;
-}();
 
 // ============================================================================
 // Naive scalar baselines (ASCII-only byte-level case mapping)
@@ -86,164 +45,179 @@ static std::string naive_to_lower(std::string_view input) {
 }
 
 static void BM_Naive_ToUpper_ASCII_Lower(benchmark::State& state) {
+    const auto& input = texere_bench::inputs::ascii_lower_1k();
     for (auto _ : state) {
-        auto upper = naive_to_upper(kAsciiLower1k);
+        auto upper = naive_to_upper(input);
         benchmark::DoNotOptimize(upper);
     }
-    state.SetBytesProcessed(state.iterations() * kAsciiLower1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Naive_ToUpper_ASCII_Lower);
+BENCHMARK(BM_Naive_ToUpper_ASCII_Lower)->Name("Case.ToUpper/naive/ascii_lower/1k");
 
 static void BM_Naive_ToUpper_ASCII_AlreadyUpper(benchmark::State& state) {
+    const auto& input = texere_bench::inputs::ascii_upper_1k();
     for (auto _ : state) {
-        auto upper = naive_to_upper(kAsciiMixed1k);
+        auto upper = naive_to_upper(input);
         benchmark::DoNotOptimize(upper);
     }
-    state.SetBytesProcessed(state.iterations() * kAsciiMixed1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Naive_ToUpper_ASCII_AlreadyUpper);
+BENCHMARK(BM_Naive_ToUpper_ASCII_AlreadyUpper)->Name("Case.ToUpper/naive/ascii_upper/1k");
 
 static void BM_Naive_ToLower_ASCII_Upper(benchmark::State& state) {
+    const auto& input = texere_bench::inputs::ascii_upper_1k();
     for (auto _ : state) {
-        auto lower = naive_to_lower(kAsciiMixed1k);
+        auto lower = naive_to_lower(input);
         benchmark::DoNotOptimize(lower);
     }
-    state.SetBytesProcessed(state.iterations() * kAsciiMixed1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_Naive_ToLower_ASCII_Upper);
+BENCHMARK(BM_Naive_ToLower_ASCII_Upper)->Name("Case.ToLower/naive/ascii_upper/1k");
 
 // ============================================================================
 // to_upper
 // ============================================================================
 
 static void BM_ToUpper_ASCII_Lower(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAsciiLower1k);
+    const auto& input = texere_bench::inputs::ascii_lower_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto upper = to_upper(s);
         benchmark::DoNotOptimize(upper);
     }
-    state.SetBytesProcessed(state.iterations() * kAsciiLower1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ToUpper_ASCII_Lower);
+BENCHMARK(BM_ToUpper_ASCII_Lower)->Name("Case.ToUpper/txt/ascii_lower/1k");
 
 static void BM_ToUpper_ASCII_AlreadyUpper(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAsciiMixed1k);
+    const auto& input = texere_bench::inputs::ascii_upper_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto upper = to_upper(s);
         benchmark::DoNotOptimize(upper);
     }
-    state.SetBytesProcessed(state.iterations() * kAsciiMixed1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ToUpper_ASCII_AlreadyUpper);
+BENCHMARK(BM_ToUpper_ASCII_AlreadyUpper)->Name("Case.ToUpper/txt/ascii_upper/1k");
 
 static void BM_ToUpper_CJK(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kCJK1k);
+    const auto& input = texere_bench::inputs::cjk_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto upper = to_upper(s);
         benchmark::DoNotOptimize(upper);
     }
-    state.SetBytesProcessed(state.iterations() * kCJK1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ToUpper_CJK);
+BENCHMARK(BM_ToUpper_CJK)->Name("Case.ToUpper/txt/cjk/1k");
 
 static void BM_ToUpper_Mixed(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kMixed1k);
+    const auto& input = texere_bench::inputs::mixed_ascii_cjk_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto upper = to_upper(s);
         benchmark::DoNotOptimize(upper);
     }
-    state.SetBytesProcessed(state.iterations() * kMixed1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ToUpper_Mixed);
+BENCHMARK(BM_ToUpper_Mixed)->Name("Case.ToUpper/txt/mixed_ascii_cjk/1k");
 
 static void BM_ToUpper_Eszett(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kEszett100);
+    const auto& input = texere_bench::inputs::eszett_100();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto upper = to_upper(s);
         benchmark::DoNotOptimize(upper);
     }
-    state.SetBytesProcessed(state.iterations() * kEszett100.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ToUpper_Eszett);
+BENCHMARK(BM_ToUpper_Eszett)->Name("Case.ToUpper/txt/eszett/100");
 
 // ============================================================================
 // to_lower
 // ============================================================================
 
 static void BM_ToLower_ASCII_Upper(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAsciiMixed1k);
+    const auto& input = texere_bench::inputs::ascii_upper_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto lower = to_lower(s);
         benchmark::DoNotOptimize(lower);
     }
-    state.SetBytesProcessed(state.iterations() * kAsciiMixed1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ToLower_ASCII_Upper);
+BENCHMARK(BM_ToLower_ASCII_Upper)->Name("Case.ToLower/txt/ascii_upper/1k");
 
 static void BM_ToLower_CJK(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kCJK1k);
+    const auto& input = texere_bench::inputs::cjk_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto lower = to_lower(s);
         benchmark::DoNotOptimize(lower);
     }
-    state.SetBytesProcessed(state.iterations() * kCJK1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ToLower_CJK);
+BENCHMARK(BM_ToLower_CJK)->Name("Case.ToLower/txt/cjk/1k");
 
 // ============================================================================
 // to_title
 // ============================================================================
 
 static void BM_ToTitle_ASCII_Lower(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAsciiLower1k);
+    const auto& input = texere_bench::inputs::ascii_lower_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto title = to_title(s);
         benchmark::DoNotOptimize(title);
     }
-    state.SetBytesProcessed(state.iterations() * kAsciiLower1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ToTitle_ASCII_Lower);
+BENCHMARK(BM_ToTitle_ASCII_Lower)->Name("Case.ToTitle/txt/ascii_lower/1k");
 
 static void BM_ToTitle_Mixed(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kMixed1k);
+    const auto& input = texere_bench::inputs::mixed_ascii_cjk_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto title = to_title(s);
         benchmark::DoNotOptimize(title);
     }
-    state.SetBytesProcessed(state.iterations() * kMixed1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_ToTitle_Mixed);
+BENCHMARK(BM_ToTitle_Mixed)->Name("Case.ToTitle/txt/mixed_ascii_cjk/1k");
 
 // ============================================================================
 // case_fold
 // ============================================================================
 
 static void BM_CaseFold_ASCII_Lower(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAsciiLower1k);
+    const auto& input = texere_bench::inputs::ascii_lower_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto folded = case_fold(s);
         benchmark::DoNotOptimize(folded);
     }
-    state.SetBytesProcessed(state.iterations() * kAsciiLower1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_CaseFold_ASCII_Lower);
+BENCHMARK(BM_CaseFold_ASCII_Lower)->Name("Case.Fold/txt/ascii_lower/1k");
 
 static void BM_CaseFold_ASCII_Mixed(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAsciiMixed1k);
+    const auto& input = texere_bench::inputs::ascii_upper_1k();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto folded = case_fold(s);
         benchmark::DoNotOptimize(folded);
     }
-    state.SetBytesProcessed(state.iterations() * kAsciiMixed1k.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_CaseFold_ASCII_Mixed);
+BENCHMARK(BM_CaseFold_ASCII_Mixed)->Name("Case.Fold/txt/ascii_upper/1k");
 
 static void BM_CaseFold_Eszett(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kEszett100);
+    const auto& input = texere_bench::inputs::eszett_100();
+    auto s = string::from_utf8_unchecked(input);
     for (auto _ : state) {
         auto folded = case_fold(s);
         benchmark::DoNotOptimize(folded);
     }
-    state.SetBytesProcessed(state.iterations() * kEszett100.size());
+    texere_bench::set_bytes_processed(state, input.size());
 }
-BENCHMARK(BM_CaseFold_Eszett);
+BENCHMARK(BM_CaseFold_Eszett)->Name("Case.Fold/txt/eszett/100");
