@@ -12,6 +12,9 @@
 #include <texere/string.hpp>
 #include <texere/case.hpp>
 
+#include <string>
+#include <string_view>
+
 using namespace txt;
 
 // ============================================================================
@@ -57,6 +60,57 @@ static const std::string kEszett100 = []() {
     for (int i = 0; i < 100; ++i) s += "\xc3\x9f"; // ß
     return s;
 }();
+
+// ============================================================================
+// Naive scalar baselines (ASCII-only byte-level case mapping)
+// ============================================================================
+
+static std::string naive_to_upper(std::string_view input) {
+    std::string res;
+    res.reserve(input.size());
+    for (unsigned char c : input) {
+        if (c >= 'a' && c <= 'z') res.push_back(static_cast<char>(c - 32));
+        else res.push_back(static_cast<char>(c));
+    }
+    return res;
+}
+
+static std::string naive_to_lower(std::string_view input) {
+    std::string res;
+    res.reserve(input.size());
+    for (unsigned char c : input) {
+        if (c >= 'A' && c <= 'Z') res.push_back(static_cast<char>(c + 32));
+        else res.push_back(static_cast<char>(c));
+    }
+    return res;
+}
+
+static void BM_Naive_ToUpper_ASCII_Lower(benchmark::State& state) {
+    for (auto _ : state) {
+        auto upper = naive_to_upper(kAsciiLower1k);
+        benchmark::DoNotOptimize(upper);
+    }
+    state.SetBytesProcessed(state.iterations() * kAsciiLower1k.size());
+}
+BENCHMARK(BM_Naive_ToUpper_ASCII_Lower);
+
+static void BM_Naive_ToUpper_ASCII_AlreadyUpper(benchmark::State& state) {
+    for (auto _ : state) {
+        auto upper = naive_to_upper(kAsciiMixed1k);
+        benchmark::DoNotOptimize(upper);
+    }
+    state.SetBytesProcessed(state.iterations() * kAsciiMixed1k.size());
+}
+BENCHMARK(BM_Naive_ToUpper_ASCII_AlreadyUpper);
+
+static void BM_Naive_ToLower_ASCII_Upper(benchmark::State& state) {
+    for (auto _ : state) {
+        auto lower = naive_to_lower(kAsciiMixed1k);
+        benchmark::DoNotOptimize(lower);
+    }
+    state.SetBytesProcessed(state.iterations() * kAsciiMixed1k.size());
+}
+BENCHMARK(BM_Naive_ToLower_ASCII_Upper);
 
 // ============================================================================
 // to_upper

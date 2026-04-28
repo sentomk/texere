@@ -12,6 +12,9 @@
 #include <texere/string.hpp>
 #include <texere/convert.hpp>
 
+#include <string>
+#include <string_view>
+
 using namespace txt;
 
 // ============================================================================
@@ -164,3 +167,112 @@ static void BM_ToLatin1_CJK_Fails(benchmark::State& state) {
     state.SetBytesProcessed(state.iterations() * kCJK1k.size());
 }
 BENCHMARK(BM_ToLatin1_CJK_Fails);
+
+// ============================================================================
+// Naive baselines — hand-rolled codepoint iteration for conversion
+// ============================================================================
+
+static std::wstring naive_to_wstring(std::string_view utf8) {
+    std::wstring res;
+    res.reserve(utf8.size());
+    const unsigned char* bytes = reinterpret_cast<const unsigned char*>(utf8.data());
+    std::size_t i = 0;
+    while (i < utf8.size()) {
+        unsigned char c = bytes[i];
+        char32_t cp;
+        if (c <= 0x7F)            { cp = c; i += 1; }
+        else if ((c & 0xE0) == 0xC0) { cp = (c & 0x1F) << 6  | (bytes[i+1] & 0x3F); i += 2; }
+        else if ((c & 0xF0) == 0xE0) { cp = (c & 0x0F) << 12 | (bytes[i+1] & 0x3F) << 6 | (bytes[i+2] & 0x3F); i += 3; }
+        else                         { cp = (c & 0x07) << 18 | (bytes[i+1] & 0x3F) << 12 | (bytes[i+2] & 0x3F) << 6 | (bytes[i+3] & 0x3F); i += 4; }
+        if constexpr (sizeof(wchar_t) == 2) {
+            if (cp <= 0xFFFF) { res.push_back(static_cast<wchar_t>(cp)); }
+            else {
+                cp -= 0x10000;
+                res.push_back(static_cast<wchar_t>(0xD800 | (cp >> 10)));
+                res.push_back(static_cast<wchar_t>(0xDC00 | (cp & 0x3FF)));
+            }
+        } else {
+            res.push_back(static_cast<wchar_t>(cp));
+        }
+    }
+    return res;
+}
+
+static std::string naive_from_wstring(std::wstring_view ws) {
+    std::string res;
+    res.reserve(ws.size() * 3);
+    for (std::size_t i = 0; i < ws.size(); ++i) {
+        char32_t cp;
+        if constexpr (sizeof(wchar_t) == 2) {
+            wchar_t w = ws[i];
+            if (w >= 0xD800 && w <= 0xDBFF &&
+                i + 1 < ws.size() &&
+                ws[i + 1] >= 0xDC00 && ws[i + 1] <= 0xDFFF) {
+                char32_t hi = static_cast<char32_t>(w - 0xD800);
+                ++i;
+                char32_t lo = static_cast<char32_t>(ws[i] - 0xDC00);
+                cp = 0x10000 + (hi << 10) + lo;
+            } else {
+                cp = static_cast<char32_t>(w);
+            }
+        } else {
+            cp = static_cast<char32_t>(ws[i]);
+        }
+        if (cp <= 0x7F) {
+            res.push_back(static_cast<char>(cp));
+        } else if (cp <= 0x7FF) {
+            res.push_back(static_cast<char>(0xC0 | (cp >> 6)));
+            res.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+        } else if (cp <= 0xFFFF) {
+            res.push_back(static_cast<char>(0xE0 | (cp >> 12)));
+            res.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+            res.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+        } else {
+            res.push_back(static_cast<char>(0xF0 | (cp >> 18)));
+            res.push_back(static_cast<char>(0x80 | ((cp >> 12) & 0x3F)));
+            res.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+            res.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+        }
+    }
+    return res;
+}
+
+static void BM_Naive_ToWString_ASCII(benchmark::State& state) {
+    auto s = string::from_utf8_unchecked(kAscii1k);
+    for (auto _ : state) {
+        auto ws = naive_to_wstring(s.to_std_string_view());
+        benchmark::DoNotOptimize(ws);
+    }
+    state.SetBytesProcessed(state.iterations() * kAscii1k.size());
+}
+BENCHMARK(BM_Naive_ToWString_ASCII);
+
+static void BM_Naive_ToWString_CJK(benchmark::State& state) {
+    auto s = string::from_utf8_unchecked(kCJK1k);
+    for (auto _ : state) {
+        auto ws = naive_to_wstring(s.to_std_string_view());
+        benchmark::DoNotOptimize(ws);
+    }
+    state.SetBytesProcessed(state.iterations() * kCJK1k.size());
+}
+BENCHMARK(BM_Naive_ToWString_CJK);
+
+static void BM_Naive_FromWString_ASCII(benchmark::State& state) {
+    std::wstring ws(1000, L'a');
+    for (auto _ : state) {
+        auto result = naive_from_wstring(ws);
+        benchmark::DoNotOptimize(result);
+    }
+    state.SetBytesProcessed(state.iterations() * ws.size() * sizeof(wchar_t));
+}
+BENCHMARK(BM_Naive_FromWString_ASCII);
+
+static void BM_Naive_FromWString_CJK(benchmark::State& state) {
+    std::wstring ws(1000, L'\x4e2d');
+    for (auto _ : state) {
+        auto result = naive_from_wstring(ws);
+        benchmark::DoNotOptimize(result);
+    }
+    state.SetBytesProcessed(state.iterations() * ws.size() * sizeof(wchar_t));
+}
+BENCHMARK(BM_Naive_FromWString_CJK);

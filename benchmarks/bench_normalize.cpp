@@ -12,6 +12,9 @@
 #include <texere/string.hpp>
 #include <texere/normalize.hpp>
 
+#include <string>
+#include <string_view>
+
 using namespace txt;
 
 // ============================================================================
@@ -186,3 +189,40 @@ static void BM_EqualsNormalized_NotEqual(benchmark::State& state) {
     state.SetBytesProcessed(state.iterations() * (kNFC1000.size() + kAscii1k.size()));
 }
 BENCHMARK(BM_EqualsNormalized_NotEqual);
+
+// ============================================================================
+// Naive baselines — no-op pass-through for normalized(), byte-level for equals
+// ============================================================================
+
+static void BM_Naive_Normalize_NFC_ASCII(benchmark::State& state) {
+    auto s = string::from_utf8_unchecked(kAscii1k);
+    for (auto _ : state) {
+        // Naive "normalization": return input as-is
+        auto out = s.to_std_string();
+        benchmark::DoNotOptimize(out);
+    }
+    state.SetBytesProcessed(state.iterations() * kAscii1k.size());
+}
+BENCHMARK(BM_Naive_Normalize_NFC_ASCII);
+
+static void BM_Naive_Normalize_NFC_NFD_to_NFC(benchmark::State& state) {
+    auto s = string::from_utf8_unchecked(kNFD1000);
+    for (auto _ : state) {
+        auto out = s.to_std_string();
+        benchmark::DoNotOptimize(out);
+    }
+    state.SetBytesProcessed(state.iterations() * kNFD1000.size());
+}
+BENCHMARK(BM_Naive_Normalize_NFC_NFD_to_NFC);
+
+static void BM_Naive_EqualsNormalized_Equal_NFC(benchmark::State& state) {
+    auto a = string::from_utf8_unchecked(kNFC1000);
+    auto b = string::from_utf8_unchecked(kNFC1000);
+    for (auto _ : state) {
+        // Naive: byte-level comparison
+        auto eq = (a.to_std_string_view() == b.to_std_string_view());
+        benchmark::DoNotOptimize(eq);
+    }
+    state.SetBytesProcessed(state.iterations() * kNFC1000.size());
+}
+BENCHMARK(BM_Naive_EqualsNormalized_Equal_NFC);

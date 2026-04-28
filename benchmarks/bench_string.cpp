@@ -45,28 +45,6 @@ static const std::string kEmoji100 = []() {
 }();
 
 // ============================================================================
-// from_utf8  (strict validation path)
-// ============================================================================
-
-static void BM_FromUtf8_ASCII(benchmark::State& state) {
-    for (auto _ : state) {
-        auto r = string::from_utf8(kAscii1k);
-        benchmark::DoNotOptimize(r);
-    }
-    state.SetBytesProcessed(state.iterations() * kAscii1k.size());
-}
-BENCHMARK(BM_FromUtf8_ASCII);
-
-static void BM_FromUtf8_CJK(benchmark::State& state) {
-    for (auto _ : state) {
-        auto r = string::from_utf8(kCJK1k);
-        benchmark::DoNotOptimize(r);
-    }
-    state.SetBytesProcessed(state.iterations() * kCJK1k.size());
-}
-BENCHMARK(BM_FromUtf8_CJK);
-
-// ============================================================================
 // length()  –  grapheme count via full scan
 // ============================================================================
 
