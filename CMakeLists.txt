@@ -81,12 +81,16 @@ target_compile_features(texere PUBLIC cxx_std_17)
 
 # Optional dependency linkage
 if(TEXERE_USE_SIMDUTF)
-    target_link_libraries(texere PRIVATE simdutf)
+    target_link_libraries(texere PRIVATE
+        $<BUILD_INTERFACE:simdutf>
+    )
     target_compile_definitions(texere PRIVATE TEXERE_HAS_SIMDUTF=1)
 endif()
 
 if(TEXERE_USE_UNIALGO)
-    target_link_libraries(texere PRIVATE uni-algo::uni-algo)
+    target_link_libraries(texere PRIVATE
+        $<BUILD_INTERFACE:uni-algo::uni-algo>
+    )
     target_compile_definitions(texere PRIVATE TEXERE_HAS_UNIALGO=1)
 endif()
 
@@ -110,11 +114,12 @@ if(TEXERE_BUILD_BENCHMARKS)
     add_subdirectory(benchmarks)
 endif()
 
-# Skip installation during development to avoid export errors with FetchContent dependencies
-if(OFF)
 # ============================================================================
 # Install & export  (supports FetchContent + find_package)
 # ============================================================================
+option(TEXERE_BUILD_INSTALL "Generate install targets for find_package() support" OFF)
+
+if(TEXERE_BUILD_INSTALL)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
