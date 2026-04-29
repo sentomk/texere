@@ -28,33 +28,12 @@ endif()
 # ============================================================================
 option(TEXERE_BUILD_TESTS      "Build unit tests"   ON)
 option(TEXERE_BUILD_BENCHMARKS "Build benchmarks"   OFF)
-option(TEXERE_USE_SIMDUTF      "Use simdutf for fast UTF-8 validation"  ON)
-option(TEXERE_USE_UNIALGO      "Use uni-algo for Unicode algorithms"     ON)
 option(TEXERE_USE_FMT          "Use {fmt} for formatting support"        OFF)
 
 # ============================================================================
 # FetchContent dependencies
 # ============================================================================
 include(FetchContent)
-
-if(TEXERE_USE_SIMDUTF)
-    set(SIMDUTF_TESTS OFF CACHE BOOL "Disable simdutf upstream tests in FetchContent builds" FORCE)
-    FetchContent_Declare(simdutf
-        GIT_REPOSITORY https://github.com/simdutf/simdutf.git
-        GIT_TAG        v5.2.8
-        GIT_SHALLOW    TRUE
-    )
-    FetchContent_MakeAvailable(simdutf)
-endif()
-
-if(TEXERE_USE_UNIALGO)
-    FetchContent_Declare(uni_algo
-        GIT_REPOSITORY https://github.com/uni-algo/uni-algo.git
-        GIT_TAG        v1.2.0
-        GIT_SHALLOW    TRUE
-    )
-    FetchContent_MakeAvailable(uni_algo)
-endif()
 
 if(TEXERE_USE_FMT)
     FetchContent_Declare(fmt
@@ -78,21 +57,6 @@ target_include_directories(texere PUBLIC
 )
 
 target_compile_features(texere PUBLIC cxx_std_17)
-
-# Optional dependency linkage
-if(TEXERE_USE_SIMDUTF)
-    target_link_libraries(texere PRIVATE
-        $<BUILD_INTERFACE:simdutf>
-    )
-    target_compile_definitions(texere PRIVATE TEXERE_HAS_SIMDUTF=1)
-endif()
-
-if(TEXERE_USE_UNIALGO)
-    target_link_libraries(texere PRIVATE
-        $<BUILD_INTERFACE:uni-algo::uni-algo>
-    )
-    target_compile_definitions(texere PRIVATE TEXERE_HAS_UNIALGO=1)
-endif()
 
 if(TEXERE_USE_FMT)
     target_link_libraries(texere PUBLIC fmt::fmt)

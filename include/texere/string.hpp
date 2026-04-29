@@ -12,6 +12,7 @@
 #include "iterator.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <string_view>
 
@@ -19,6 +20,7 @@ namespace txt {
 
 // Forward declarations
 class string_view;
+enum class normalization_form : std::uint8_t;
 
 // ===========================================================================
 // txt::string
@@ -221,6 +223,12 @@ public:
     const char operator[](std::size_t) const = delete;
 
 private:
+    friend string to_upper(const string&);
+    friend string to_lower(const string&);
+    friend string to_title(const string&);
+    friend string case_fold(const string&);
+    friend string normalized(const string&, normalization_form);
+
     // Private constructor – only reachable from factory functions.
     explicit string(std::string storage) noexcept : storage_(std::move(storage)) {}
 

@@ -11,8 +11,6 @@
                 "CMAKE_BUILD_TYPE": "Debug",
                 "TEXERE_BUILD_TESTS": "ON",
                 "TEXERE_BUILD_BENCHMARKS": "OFF",
-                "TEXERE_USE_SIMDUTF": "ON",
-                "TEXERE_USE_UNIALGO": "ON",
                 "TEXERE_USE_FMT": "OFF"
             }
         },
@@ -25,9 +23,7 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "TEXERE_BUILD_TESTS": "OFF",
-                "TEXERE_BUILD_BENCHMARKS": "OFF",
-                "TEXERE_USE_SIMDUTF": "ON",
-                "TEXERE_USE_UNIALGO": "ON"
+                "TEXERE_BUILD_BENCHMARKS": "OFF"
             }
         },
         {
@@ -39,9 +35,7 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "TEXERE_BUILD_TESTS": "ON",
-                "TEXERE_BUILD_BENCHMARKS": "OFF",
-                "TEXERE_USE_SIMDUTF": "ON",
-                "TEXERE_USE_UNIALGO": "ON"
+                "TEXERE_BUILD_BENCHMARKS": "OFF"
             }
         },
         {
@@ -54,9 +48,7 @@
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_CXX_FLAGS": "--coverage",
                 "TEXERE_BUILD_TESTS": "ON",
-                "TEXERE_BUILD_BENCHMARKS": "OFF",
-                "TEXERE_USE_SIMDUTF": "ON",
-                "TEXERE_USE_UNIALGO": "ON"
+                "TEXERE_BUILD_BENCHMARKS": "OFF"
             }
         },
         {
@@ -68,9 +60,7 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "TEXERE_BUILD_TESTS": "OFF",
-                "TEXERE_BUILD_BENCHMARKS": "ON",
-                "TEXERE_USE_SIMDUTF": "ON",
-                "TEXERE_USE_UNIALGO": "ON"
+                "TEXERE_BUILD_BENCHMARKS": "ON"
             }
         }
     ],

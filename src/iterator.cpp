@@ -3,9 +3,7 @@
 
 #include <texere/iterator.hpp>
 
-#ifdef TEXERE_HAS_UNIALGO
-#include <uni_algo/ranges_grapheme.h>
-#endif
+#include "unicode_internal.hpp"
 
 namespace txt {
 
@@ -15,46 +13,56 @@ void grapheme_iterator::find_cluster_end() noexcept {
         return;
     }
 
-#ifdef TEXERE_HAS_UNIALGO
-    std::string_view sv(ptr_, end_ - ptr_);
-    auto view = una::ranges::grapheme::utf8_view(sv);
-    auto it = view.begin();
-    if (it != view.end()) {
-        cluster_end_ = ptr_ + std::distance((*it).begin(), (*it).end());
-    } else {
+    const std::string_view sv(ptr_, static_cast<std::size_t>(end_ - ptr_));
+    auto first = detail::decode_utf8_at(sv, 0);
+    if (first.width == 0) {
         cluster_end_ = end_;
+        return;
     }
-#else
-    // Fallback heuristic if uni_algo is missing
-    const unsigned char* p = reinterpret_cast<const unsigned char*>(ptr_);
-    const unsigned char* e = reinterpret_cast<const unsigned char*>(end_);
-    
-    auto advance_cp = [](const unsigned char* curr, const unsigned char* end_ptr) -> const unsigned char* {
-        if (curr >= end_ptr) return end_ptr;
-        unsigned char c = *curr;
-        if (c <= 0x7F) return curr + 1;
-        if ((c & 0xE0) == 0xC0) return curr + 2;
-        if ((c & 0xF0) == 0xE0) return curr + 3;
-        if ((c & 0xF8) == 0xF0) return curr + 4;
-        return curr + 1;
-    };
 
-    p = advance_cp(p, e);
-    while (p < e) {
-        if (e - p >= 3 && p[0] == 0xE2 && p[1] == 0x80 && p[2] == 0x8D) {
-            p += 3;
-            p = advance_cp(p, e);
-            continue;
+    std::size_t offset = first.width;
+    char32_t previous = first.code_point;
+    int regional_indicator_count =
+        (previous >= 0x1F1E6 && previous <= 0x1F1FF) ? 1 : 0;
+
+    while (offset < sv.size()) {
+        auto current = detail::decode_utf8_at(sv, offset);
+        if (current.width == 0) {
+            break;
         }
-        if (e - p >= 2 && ((p[0] == 0xCC) || (p[0] == 0xCD && p[1] <= 0xAF))) {
-            p += 2;
-            continue;
+
+        const char32_t cp = current.code_point;
+        bool keep_in_cluster = false;
+
+        if (previous == 0x000D && cp == 0x000A) {
+            keep_in_cluster = true;
+        } else if (detail::is_control_for_grapheme(previous) ||
+                   detail::is_control_for_grapheme(cp)) {
+            keep_in_cluster = false;
+        } else if (detail::is_combining_mark(cp) || detail::is_variation_selector(cp) ||
+                   detail::is_emoji_modifier(cp)) {
+            keep_in_cluster = true;
+        } else if (cp == 0x200D || previous == 0x200D) {
+            keep_in_cluster = true;
+        } else if (cp >= 0x1F1E6 && cp <= 0x1F1FF && regional_indicator_count == 1) {
+            keep_in_cluster = true;
         }
-        break;
+
+        if (!keep_in_cluster) {
+            break;
+        }
+
+        offset += current.width;
+        previous = cp;
+        if (cp >= 0x1F1E6 && cp <= 0x1F1FF) {
+            ++regional_indicator_count;
+        } else if (cp != 0x200D && !detail::is_variation_selector(cp) &&
+                   !detail::is_combining_mark(cp)) {
+            regional_indicator_count = 0;
+        }
     }
-    cluster_end_ = reinterpret_cast<const char*>(p);
-    if (cluster_end_ > end_) cluster_end_ = end_;
-#endif
+
+    cluster_end_ = ptr_ + offset;
 }
 
 } // namespace txt

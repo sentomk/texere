@@ -3,54 +3,69 @@
 
 #include <texere/convert.hpp>
 
-#ifdef TEXERE_HAS_UNIALGO
-#include <uni_algo/conv.h>
-#endif
+#include "unicode_internal.hpp"
 
 namespace txt {
 
 std::wstring to_wstring(const string& s) {
-#ifdef TEXERE_HAS_UNIALGO
-    std::string_view sv = s.to_std_string_view();
-    if constexpr (sizeof(wchar_t) == 2) {
-        return una::utf8to16<char, wchar_t>(sv);
-    } else {
-        return una::utf8to32<char, wchar_t>(sv);
+    std::wstring out;
+    const auto sv = s.to_std_string_view();
+    out.reserve(sv.size());
+
+    for (std::size_t i = 0; i < sv.size();) {
+        auto decoded = detail::decode_utf8_at(sv, i);
+        const char32_t cp = decoded.code_point;
+        if constexpr (sizeof(wchar_t) == 2) {
+            if (cp <= 0xFFFF) {
+                out.push_back(static_cast<wchar_t>(cp));
+            } else {
+                const char32_t u = cp - 0x10000;
+                out.push_back(static_cast<wchar_t>(0xD800 + (u >> 10)));
+                out.push_back(static_cast<wchar_t>(0xDC00 + (u & 0x3FF)));
+            }
+        } else {
+            out.push_back(static_cast<wchar_t>(cp));
+        }
+        i += decoded.width == 0 ? 1 : decoded.width;
     }
-#else
-    // Fallback: Just cast if no unialgo, though it's lossy/wrong for non-ASCII
-    std::string_view sv = s.to_std_string_view();
-    return std::wstring(sv.begin(), sv.end());
-#endif
+
+    return out;
 }
 
 expected<string, error> from_wstring(std::wstring_view ws) {
-#ifdef TEXERE_HAS_UNIALGO
-    std::string res;
-    if constexpr (sizeof(wchar_t) == 2) {
-        res = una::utf16to8<wchar_t, char>(ws);
-    } else {
-        res = una::utf32to8<wchar_t, char>(ws);
+    std::string out;
+    out.reserve(ws.size());
+
+    for (std::size_t i = 0; i < ws.size(); ++i) {
+        char32_t cp = static_cast<char32_t>(ws[i]);
+        if constexpr (sizeof(wchar_t) == 2) {
+            if (cp >= 0xD800 && cp <= 0xDBFF) {
+                if (i + 1 >= ws.size()) {
+                    return unexpected<error>(error{errc::surrogate_pair, i});
+                }
+                const char32_t low = static_cast<char32_t>(ws[i + 1]);
+                if (low < 0xDC00 || low > 0xDFFF) {
+                    return unexpected<error>(error{errc::surrogate_pair, i});
+                }
+                cp = 0x10000 + ((cp - 0xD800) << 10) + (low - 0xDC00);
+                ++i;
+            } else if (cp >= 0xDC00 && cp <= 0xDFFF) {
+                return unexpected<error>(error{errc::surrogate_pair, i});
+            }
+        } else if (cp > 0x10FFFF || (cp >= 0xD800 && cp <= 0xDFFF)) {
+            return unexpected<error>(error{errc::out_of_range, i});
+        }
+        detail::append_utf8(out, cp);
     }
-    // utf16to8 returns valid utf8, we can use unchecked
-    return string::from_utf8_unchecked(res);
-#else
-    // Fallback stub
-    std::string res(ws.begin(), ws.end());
-    return string::from_utf8(res);
-#endif
+
+    return string::from_utf8_unchecked(out);
 }
 
 string from_latin1(std::string_view latin1) {
     std::string res;
     res.reserve(latin1.size() * 2);
     for (unsigned char c : latin1) {
-        if (c <= 0x7F) {
-            res.push_back(c);
-        } else {
-            res.push_back(0xC0 | (c >> 6));
-            res.push_back(0x80 | (c & 0x3F));
-        }
+        detail::append_utf8(res, c);
     }
     return string::from_utf8_unchecked(res);
 }
@@ -58,20 +73,17 @@ string from_latin1(std::string_view latin1) {
 expected<std::string, error> to_latin1(const string& s) {
     std::string res;
     res.reserve(s.size_bytes());
-    auto cps = s.codepoints();
-    std::size_t byte_pos = 0;
-    
-    // We need to iterate carefully to track byte_position for error reporting
-    // Let's use basic iteration
-    for (char32_t cp : cps) {
-        if (cp > 0xFF) {
-            return unexpected<error>(error{errc::invalid_utf8, byte_pos}); 
-            // Better error code might be needed, but using existing one
+    const auto sv = s.to_std_string_view();
+
+    for (std::size_t i = 0; i < sv.size();) {
+        auto decoded = detail::decode_utf8_at(sv, i);
+        if (!decoded.valid || decoded.code_point > 0xFF) {
+            return unexpected<error>(error{errc::conversion_fail, i});
         }
-        res.push_back(static_cast<char>(cp));
-        // byte_pos increment is tricky without iterator that tracks it.
-        byte_pos += (cp <= 0x7F) ? 1 : 2; 
+        res.push_back(static_cast<char>(decoded.code_point));
+        i += decoded.width == 0 ? 1 : decoded.width;
     }
+
     return res;
 }
 

@@ -9,13 +9,7 @@ FetchContent_Declare(doctest
     GIT_TAG        v2.4.11
     GIT_SHALLOW    TRUE
 )
-FetchContent_GetProperties(doctest)
-if(NOT doctest_POPULATED)
-    FetchContent_Populate(doctest)
-    add_library(doctest INTERFACE)
-    add_library(doctest::doctest ALIAS doctest)
-    target_include_directories(doctest INTERFACE ${doctest_SOURCE_DIR})
-endif()
+FetchContent_MakeAvailable(doctest)
 
 # ============================================================================
 # Test executable

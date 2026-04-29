@@ -5,17 +5,17 @@ This document provides context, architectural guidelines, and rules for AI agent
 ## 1. Project Overview
 **texere** is a C++17 Unicode-safe UTF-8 string library. It provides `txt::string`, a type-safe drop-in replacement for `std::string` in Unicode-aware contexts.
 - **Core Philosophy**: Zero-surprise, explicit Unicode correctness (Unicode 15.1), and high performance.
-- **Backends**: `simdutf` for hardware-accelerated UTF-8 validation, and `uni-algo` for Unicode algorithms (grapheme clustering, case mapping, normalization).
+- **Unicode Implementation**: UTF-8 validation, grapheme clustering, case mapping, normalization, and wide-string conversion are implemented inside `src/`.
 
 ## 2. Architecture & File Structure
 texere is a **Compiled Library (Static/Shared)**, *not* a header-only library. This is to guarantee "Zero Dependency Bleeding" and fast compilation times for the end user.
 
 - **`include/texere/*.hpp` (Public API)**
-  - MUST NOT contain any heavy includes (`#include <simdutf.h>` or `#include <uni_algo/...>`).
+  - MUST NOT contain implementation-heavy Unicode tables or backend includes.
   - Contains only clean declarations, templates, and inline wrappers.
   - `#include <string>` and `#include <string_view>` are allowed.
 - **`src/*.cpp` (Implementation)**
-  - Where the heavy lifting happens. This is the ONLY place where backend libraries (`simdutf`, `uni-algo`) should be included.
+  - Where the heavy lifting happens. Unicode tables and algorithms belong here.
 - **`tests/*.cpp`**
   - Uses `doctest`. Every new feature MUST have test coverage.
 - **`benchmarks/*.cpp`**
@@ -37,13 +37,13 @@ texere is a **Compiled Library (Static/Shared)**, *not* a header-only library. T
 - **Error Handling**: Use `txt::expected<T, txt::error>` for recoverable errors (e.g., validation failures). Do NOT throw exceptions.
 
 ## 5. CMake & Dependencies
-- Dependencies (`simdutf`, `uni-algo`, `fmt`) are managed via `FetchContent`.
-- In `CMakeLists.txt`, backend dependencies are linked as `PRIVATE` to `texere` to prevent dependency leakage. Do NOT change them to `INTERFACE` or `PUBLIC` unless strictly necessary (like `fmt` if exposed in headers).
+- Optional dependencies such as `fmt` are managed via `FetchContent`.
+- In `CMakeLists.txt`, optional dependencies are linked with the narrowest visibility possible. Do NOT change them to `INTERFACE` or `PUBLIC` unless strictly necessary (like `fmt` if exposed in headers).
 
 ## 6. Common Workflows for Agents
 - **When adding a new Unicode algorithm**:
   1. Declare the clean API in `include/texere/<feature>.hpp`.
-  2. Implement the logic using `uni-algo` inside `src/<feature>.cpp`.
+  2. Implement the logic inside `src/<feature>.cpp` or a private `src/` helper.
   3. Add test cases in `tests/test_algorithms.cpp`.
 - **When fixing bugs**:
   - Write a failing doctest first.

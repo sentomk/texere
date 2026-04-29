@@ -4,7 +4,7 @@
 //
 // File: bench_validate_utf8.cpp
 // Micro-benchmarks for UTF-8 validation.
-// Compares txt::string::from_utf8 (simdutf-backed) vs naive scalar validation.
+// Compares txt::string::from_utf8 vs a naive scalar validation baseline.
 //
 // Build with TEXERE_BUILD_BENCHMARKS=ON, then run:
 //   ./texere_bench --benchmark_format=json
@@ -101,7 +101,7 @@ static const std::string kInvalid_Continuation = []() {
 }();
 
 // ============================================================================
-// Benchmarks: string::from_utf8  (simdutf backend)
+// Benchmarks: string::from_utf8
 // ============================================================================
 
 static void BM_FromUtf8_ASCII(benchmark::State& state) {

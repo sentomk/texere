@@ -51,8 +51,7 @@ string normalized(const string& s, normalization_form form = normalization_form:
 // s: String to normalize (modified in-place).
 // form: The target normalization form (default: NFC).
 //
-// @note The implementation delegates to uni-algo when available, or to a
-//       built-in table-driven algorithm otherwise.
+// @note The implementation uses texere's built-in normalization tables.
 inline void normalize(string& s, normalization_form form = normalization_form::NFC) {
     s = normalized(s, form);
 }
@@ -67,10 +66,8 @@ inline void normalize(string& s, normalization_form form = normalization_form::N
 // form: Normalization form to apply before comparison (default: NFC).
 // Returns:      true iff a and b are canonically equivalent under `form`.
 [[nodiscard]]
-inline bool equals_normalized(const string& a, const string& b,
-                       normalization_form form = normalization_form::NFC) {
-    return normalized(a, form) == normalized(b, form);
-}
+bool equals_normalized(const string& a, const string& b,
+                       normalization_form form = normalization_form::NFC);
 
 inline bool string::equals_normalized(const string& other) const {
     return txt::equals_normalized(*this, other);

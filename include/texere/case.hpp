@@ -16,9 +16,9 @@ namespace txt {
 // Unicode case-mapping operations
 // ===========================================================================
 //
-// All functions follow Unicode full case-mapping rules (Unicode 15.1,
-// SpecialCasing.txt + CaseFolding.txt) rather than simple one-to-one
-// character replacement.  This means:
+// The built-in mapping tables support Unicode one-to-many case expansions for
+// the covered scripts rather than limiting results to simple one-to-one
+// character replacement. This means:
 //
 //   - A single code point may expand to multiple code points (e.g. German ß
 //     → "SS" in upper case).
@@ -26,7 +26,7 @@ namespace txt {
 //     Pass an explicit BCP 47 locale tag if locale sensitivity is needed
 //     (planned for a future milestone).
 
-// Returns an uppercased copy of `s` (Unicode full case mapping).
+// Returns an uppercased copy of `s`.
 //
 // s: Source string.
 // Returns:   New txt::string with every code point uppercased.

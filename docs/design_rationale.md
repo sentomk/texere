@@ -26,7 +26,7 @@
 
 ICU is comprehensive but large (~30 MB) with a C-style API that does not match modern C++ idioms.
 uni-algo is lightweight and modern, but provides no string type of its own.
-texere's goal: **provide a zero-overhead, Unicode-correct string value type**, optionally backed by simdutf / uni-algo.
+texere's goal: **provide a zero-overhead, Unicode-correct string value type** with its Unicode algorithms compiled behind a stable public API.
 
 ---
 
@@ -141,13 +141,12 @@ Storage layer (UTF-8 bytes)
 ## 5. Dependency Hierarchy
 
 ```
-texere (INTERFACE library, header-only)
-├── [optional] simdutf   → UTF-8 validation acceleration (TEXERE_USE_SIMDUTF=ON)
-├── [optional] uni-algo  → Unicode algorithms (normalization, case, grapheme boundaries)
-└── [optional] {fmt}     → Formatting support
+texere (compiled library)
+├── built-in Unicode implementation → UTF-8 validation, grapheme boundaries, case, normalization
+└── [optional] {fmt}                → Formatting support
 ```
 
-When optional dependencies are absent, texere falls back to a built-in pure C++17 implementation (fully functional, slightly slower).
+Unicode behavior is implemented in texere's C++17 source files, keeping the public headers free of backend dependencies.
 
 ---
 
@@ -160,7 +159,7 @@ texere targets **Unicode 15.1** (2023-09-12), specifically:
 - **Normalization**: UnicodeData-15.1.0.txt + CompositionExclusions-15.1.0.txt
 - **Script / General_Category**: Unicode 15.1 property tables
 
-When uni-algo is enabled, the effective Unicode version follows uni-algo's release (should be ≥ 15.0).
+The tables and algorithms are owned by texere's implementation.
 
 ---
 
@@ -169,8 +168,8 @@ When uni-algo is enabled, the effective Unicode version follows uni-algo's relea
 | Library | Relationship |
 |---------|--------------|
 | `std::string` | Internal backing store; interoperable via `to_std_string()` |
-| `simdutf` | Optional backend for high-performance UTF-8 validation and transcoding |
-| `uni-algo` | Optional backend providing Unicode algorithms (no string type of its own) |
+| `simdutf` | Not a dependency; UTF-8 validation is implemented internally |
+| `uni-algo` | Not a dependency; Unicode algorithms are implemented internally |
 | `ICU` | Not a dependency; ICU provides fuller locale/collation support, which texere does not aim to replace |
 | `{fmt}` / `std::format` | Optional integration for formatting `txt::string` |
 

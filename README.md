@@ -50,7 +50,7 @@ The dashboard provides interactive Chart.js charts with:
 **texere is a compiled library** (Static or Shared), *not* a header-only library.
 
 This deliberate design choice ensures **industrial-grade build performance**:
-1. **Zero Dependency Bleeding**: Heavy backend dependencies (`simdutf`, `uni-algo`) are completely hidden inside `texere`'s `src/` files. Your application's translation units will *never* parse thousands of lines of SIMD intrinsics or Unicode tables.
+1. **Zero Dependency Bleeding**: Unicode algorithms live inside `texere`'s compiled `src/` files. Your application's translation units will *never* parse Unicode implementation tables.
 2. **Fast Compile Times**: Including `<texere/string.hpp>` is practically as fast as including `<string>`.
 3. **ABI Isolation**: You can upgrade or swap the underlying Unicode engines without recompiling your entire codebase.
 
@@ -114,11 +114,9 @@ fmt::print("Hello, {}! Length is {}.
 
 | Dependency | CMake Option | Purpose |
 |------------|--------------|---------|
-| [simdutf](https://github.com/simdutf/simdutf) | `TEXERE_USE_SIMDUTF=ON` (default) | High-performance UTF-8 validation |
-| [uni-algo](https://github.com/uni-algo/uni-algo) | `TEXERE_USE_UNIALGO=ON` (default) | Unicode algorithms (normalization, case, grapheme boundaries) |
-| [{fmt}](https://github.com/fmtlib/fmt) | `TEXERE_USE_FMT=OFF` (default) | Formatting support |
+| [{fmt}](https://github.com/fmtlib/fmt) | `TEXERE_USE_FMT=OFF` (default) | Optional formatting support |
 
-All dependencies are fetched automatically via CMake FetchContent; no manual installation required.
+Core Unicode validation, conversion, case mapping, normalization, and grapheme iteration are implemented in texere itself.
 
 ---
 
@@ -126,7 +124,7 @@ All dependencies are fetched automatically via CMake FetchContent; no manual ins
 
 ### Option 1: FetchContent (Recommended)
 
-`FetchContent` will automatically download and compile `texere` (and its internal dependencies `simdutf` & `uni-algo`) as a static library, ensuring zero dependency configuration on your end.
+`FetchContent` will automatically download and compile `texere` as a static library. No Unicode backend dependency configuration is required.
 
 ```cmake
 # Optional: Enable {fmt} support before fetching
@@ -155,9 +153,7 @@ target_link_libraries(my_target PRIVATE texere::texere)
 ```bash
 cmake -B build \
   -DTEXERE_BUILD_TESTS=ON \
-  -DTEXERE_BUILD_BENCHMARKS=OFF \
-  -DTEXERE_USE_SIMDUTF=ON \
-  -DTEXERE_USE_UNIALGO=ON
+  -DTEXERE_BUILD_BENCHMARKS=OFF
 cmake --build build
 ctest --test-dir build -V
 ```
@@ -177,8 +173,8 @@ texere/
 │   ├── convert.hpp      ← to_wstring(), from_wstring()
 │   ├── format.hpp       ← {fmt} integration (fmt::formatter<txt::string>)
 │   └── expected.hpp     ← C++17-compatible txt::expected<T,E>
-├── src/                 ← Implementation (hides heavy simdutf & uni-algo headers)
-│   ├── string.cpp       ← High-performance SIMD validation
+├── src/                 ← Compiled Unicode implementation
+│   ├── string.cpp       ← UTF-8 validation
 │   ├── iterator.cpp     ← UAX #29 Grapheme state machine
 │   ├── normalize.cpp    
 │   ├── case.cpp         

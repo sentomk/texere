@@ -3,51 +3,75 @@
 
 #include <texere/string.hpp>
 
-#ifdef TEXERE_HAS_SIMDUTF
-#include <simdutf.h>
-#endif
+#include "unicode_internal.hpp"
+
+#include <cstdint>
+#include <cstring>
 
 namespace txt {
 namespace detail {
 
 expected<std::string, error> validate_utf8(std::string_view sv) {
-#ifdef TEXERE_HAS_SIMDUTF
-    simdutf::result r = simdutf::validate_utf8_with_errors(sv.data(), sv.size());
-    if (r.error == simdutf::error_code::SUCCESS) {
-        return std::string(sv);
-    }
-    // Map simdutf errors to txt::errc
-    errc code = errc::invalid_utf8;
-    if (r.error == simdutf::error_code::TOO_SHORT) code = errc::truncated_input;
-    return unexpected<error>(error{code, r.count});
-#else
-    const unsigned char* bytes = reinterpret_cast<const unsigned char*>(sv.data());
-    std::size_t len = sv.size();
+    const auto* bytes = reinterpret_cast<const unsigned char*>(sv.data());
+    const std::size_t len = sv.size();
     std::size_t i = 0;
 
+    constexpr std::uint64_t high_bit_mask = 0x8080808080808080ull;
+    while (i + sizeof(std::uint64_t) <= len) {
+        std::uint64_t chunk = 0;
+        std::memcpy(&chunk, bytes + i, sizeof(chunk));
+        if ((chunk & high_bit_mask) != 0) {
+            break;
+        }
+        i += sizeof(chunk);
+    }
+
     while (i < len) {
-        unsigned char c = bytes[i];
-        std::size_t error_pos = i;
+        const unsigned char c = bytes[i];
+        const std::size_t error_pos = i;
 
         if (c <= 0x7F) {
-            i += 1;
+            ++i;
         } else if ((c & 0xE0) == 0xC0) {
-            if (c < 0xC2) { return unexpected<error>({errc::invalid_utf8, error_pos}); } 
-            if (i + 1 >= len) { return unexpected<error>({errc::truncated_input, error_pos}); }
-            if ((bytes[i+1] & 0xC0) != 0x80) { return unexpected<error>({errc::invalid_utf8, error_pos}); }
+            if (c < 0xC2) {
+                return unexpected<error>({errc::invalid_utf8, error_pos});
+            }
+            if (i + 1 >= len) {
+                return unexpected<error>({errc::truncated_input, error_pos});
+            }
+            if ((bytes[i + 1] & 0xC0) != 0x80) {
+                return unexpected<error>({errc::invalid_utf8, error_pos});
+            }
             i += 2;
         } else if ((c & 0xF0) == 0xE0) {
-            if (i + 2 >= len) { return unexpected<error>({errc::truncated_input, error_pos}); }
-            if (c == 0xE0 && (bytes[i+1] < 0xA0 || bytes[i+1] > 0xBF)) { return unexpected<error>({errc::invalid_utf8, error_pos}); }
-            if (c == 0xED && (bytes[i+1] < 0x80 || bytes[i+1] > 0x9F)) { return unexpected<error>({errc::invalid_utf8, error_pos}); }
-            if ((bytes[i+1] & 0xC0) != 0x80 || (bytes[i+2] & 0xC0) != 0x80) { return unexpected<error>({errc::invalid_utf8, error_pos}); }
+            if (i + 2 >= len) {
+                return unexpected<error>({errc::truncated_input, error_pos});
+            }
+            if ((bytes[i + 1] & 0xC0) != 0x80 || (bytes[i + 2] & 0xC0) != 0x80) {
+                return unexpected<error>({errc::invalid_utf8, error_pos});
+            }
+            if (c == 0xE0 && bytes[i + 1] < 0xA0) {
+                return unexpected<error>({errc::invalid_utf8, error_pos});
+            }
+            if (c == 0xED && bytes[i + 1] > 0x9F) {
+                return unexpected<error>({errc::invalid_utf8, error_pos});
+            }
             i += 3;
         } else if ((c & 0xF8) == 0xF0) {
-            if (c > 0xF4) { return unexpected<error>({errc::invalid_utf8, error_pos}); }
-            if (i + 3 >= len) { return unexpected<error>({errc::truncated_input, error_pos}); }
-            if (c == 0xF0 && (bytes[i+1] < 0x90 || bytes[i+1] > 0xBF)) { return unexpected<error>({errc::invalid_utf8, error_pos}); }
-            if (c == 0xF4 && (bytes[i+1] < 0x80 || bytes[i+1] > 0x8F)) { return unexpected<error>({errc::invalid_utf8, error_pos}); }
-            if ((bytes[i+1] & 0xC0) != 0x80 || (bytes[i+2] & 0xC0) != 0x80 || (bytes[i+3] & 0xC0) != 0x80) {
+            if (c > 0xF4) {
+                return unexpected<error>({errc::invalid_utf8, error_pos});
+            }
+            if (i + 3 >= len) {
+                return unexpected<error>({errc::truncated_input, error_pos});
+            }
+            if ((bytes[i + 1] & 0xC0) != 0x80 || (bytes[i + 2] & 0xC0) != 0x80 ||
+                (bytes[i + 3] & 0xC0) != 0x80) {
+                return unexpected<error>({errc::invalid_utf8, error_pos});
+            }
+            if (c == 0xF0 && bytes[i + 1] < 0x90) {
+                return unexpected<error>({errc::invalid_utf8, error_pos});
+            }
+            if (c == 0xF4 && bytes[i + 1] > 0x8F) {
                 return unexpected<error>({errc::invalid_utf8, error_pos});
             }
             i += 4;
@@ -55,8 +79,8 @@ expected<std::string, error> validate_utf8(std::string_view sv) {
             return unexpected<error>({errc::invalid_utf8, error_pos});
         }
     }
+
     return std::string(sv);
-#endif
 }
 
 std::string make_lossy_utf8(std::string_view sv) {
