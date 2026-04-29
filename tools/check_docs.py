@@ -79,12 +79,13 @@ def check_comparison_dashboard(path: Path) -> int:
 
 
 def main() -> int:
-    required_markdown_paths = [ROOT / "README.md"]
-    optional_markdown_paths = [ROOT / "CONTRIBUTING.md"]
+    required_markdown_paths = [
+        ROOT / "README.md",
+        ROOT / "CONTRIBUTING.md",
+    ]
     docs_paths = sorted((ROOT / "docs").glob("**/*")) if (ROOT / "docs").exists() else []
     text_paths = (
         required_markdown_paths
-        + [path for path in optional_markdown_paths if path.exists()]
         + [path for path in docs_paths if path.suffix in {".html", ".md"}]
     )
 
