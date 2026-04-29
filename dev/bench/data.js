@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1777389769595,
+  "lastUpdate": 1777442006848,
   "repoUrl": "https://github.com/sentomk/texere",
   "entries": {
     "Benchmark": [
@@ -1884,6 +1884,426 @@ window.BENCHMARK_DATA = {
             "value": 165.26073178702478,
             "unit": "ns/iter",
             "extra": "iterations: 4240906\ncpu: 165.2537672374721 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "115908952+sentomk@users.noreply.github.com",
+            "name": "Yingfan Guo",
+            "username": "sentomk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0fe7f395eba44d65e0234cb583c7fc1fb441b0da",
+          "message": "chore: add code quality config files (#6)",
+          "timestamp": "2026-04-29T13:49:20+08:00",
+          "tree_id": "ba37227ab4c8860a3b204da4ea58c956c476da51",
+          "url": "https://github.com/sentomk/texere/commit/0fe7f395eba44d65e0234cb583c7fc1fb441b0da"
+        },
+        "date": 1777442006636,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "BM_Length_ASCII",
+            "value": 20229.178231721624,
+            "unit": "ns/iter",
+            "extra": "iterations: 34904\ncpu: 20228.62846665139 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Length_CJK",
+            "value": 24271.810871314043,
+            "unit": "ns/iter",
+            "extra": "iterations: 28589\ncpu: 24270.321872048688 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Length_Emoji_ZWJ",
+            "value": 4901.756828715919,
+            "unit": "ns/iter",
+            "extra": "iterations: 143475\ncpu: 4900.829656734623 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_GraphemeAt_Middle_CJK",
+            "value": 10636.4104411944,
+            "unit": "ns/iter",
+            "extra": "iterations: 65912\ncpu: 10635.65673928875 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_GraphemeIteration_CJK",
+            "value": 21212.04144732843,
+            "unit": "ns/iter",
+            "extra": "iterations: 33054\ncpu: 21211.373600774506 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_CodepointIteration_CJK",
+            "value": 1777.2235800818164,
+            "unit": "ns/iter",
+            "extra": "iterations: 395639\ncpu: 1776.8431575249163 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_FromUtf8Lossy_ASCII",
+            "value": 52.09299397120034,
+            "unit": "ns/iter",
+            "extra": "iterations: 13381104\ncpu: 52.0875982280685 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_FromUtf8Lossy_WithInvalidBytes",
+            "value": 165.61344220259593,
+            "unit": "ns/iter",
+            "extra": "iterations: 4218148\ncpu: 165.59816085163445 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_GraphemeAt_Begin_ASCII",
+            "value": 21.90684828745417,
+            "unit": "ns/iter",
+            "extra": "iterations: 31750624\ncpu: 21.902716778101755 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_GraphemeAt_End_ASCII",
+            "value": 18043.96437514545,
+            "unit": "ns/iter",
+            "extra": "iterations: 38737\ncpu: 18041.580246276193 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ToStdString",
+            "value": 23.982951219644338,
+            "unit": "ns/iter",
+            "extra": "iterations: 29208541\ncpu: 23.980746727472653 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ToStdStringView",
+            "value": 0.7037542194409823,
+            "unit": "ns/iter",
+            "extra": "iterations: 996381101\ncpu: 0.7037483170809358 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ByteIteration_CJK",
+            "value": 535.7819205402036,
+            "unit": "ns/iter",
+            "extra": "iterations: 1304685\ncpu: 535.7098832285199 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Normalize_NFC_ASCII",
+            "value": 1601.528347687767,
+            "unit": "ns/iter",
+            "extra": "iterations: 437496\ncpu: 1601.372764550989 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Normalize_NFC_NFD_to_NFC",
+            "value": 17240.00302530968,
+            "unit": "ns/iter",
+            "extra": "iterations: 40657\ncpu: 17238.044026858843 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Normalize_NFC_CJK",
+            "value": 5820.627073777779,
+            "unit": "ns/iter",
+            "extra": "iterations: 120131\ncpu: 5819.857796905053 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Normalize_NFD_ASCII",
+            "value": 1592.5197190867661,
+            "unit": "ns/iter",
+            "extra": "iterations: 438712\ncpu: 1592.4329719724997 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Normalize_NFD_NFC_to_NFD",
+            "value": 14093.790707484544,
+            "unit": "ns/iter",
+            "extra": "iterations: 49782\ncpu: 14092.053392792612 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Normalize_NFKC_ASCII",
+            "value": 2952.2970778672625,
+            "unit": "ns/iter",
+            "extra": "iterations: 237224\ncpu: 2952.270916939261 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Normalize_NFKC_Mixed",
+            "value": 5340.534727841694,
+            "unit": "ns/iter",
+            "extra": "iterations: 130990\ncpu: 5339.76362317734 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Normalize_NFKD_ASCII",
+            "value": 2952.475109686142,
+            "unit": "ns/iter",
+            "extra": "iterations: 237040\ncpu: 2952.4480256496845 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_EqualsNormalized_Equal_NFC",
+            "value": 9752.602678943842,
+            "unit": "ns/iter",
+            "extra": "iterations: 71894\ncpu: 9750.023729379349 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_EqualsNormalized_Equal_NFD_to_NFC",
+            "value": 22663.550275637783,
+            "unit": "ns/iter",
+            "extra": "iterations: 31019\ncpu: 22661.601534543293 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_EqualsNormalized_NotEqual",
+            "value": 6900.628715365303,
+            "unit": "ns/iter",
+            "extra": "iterations: 101235\ncpu: 6899.978218995413 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Naive_Normalize_NFC_ASCII",
+            "value": 24.34873862918864,
+            "unit": "ns/iter",
+            "extra": "iterations: 28765649\ncpu: 24.346248436807333 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Naive_Normalize_NFC_NFD_to_NFC",
+            "value": 85.27147044657163,
+            "unit": "ns/iter",
+            "extra": "iterations: 8221720\ncpu: 85.26588718662242 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Naive_EqualsNormalized_Equal_NFC",
+            "value": 25.64969876799292,
+            "unit": "ns/iter",
+            "extra": "iterations: 27109171\ncpu: 25.646302315921098 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Naive_ToUpper_ASCII_Lower",
+            "value": 1300.7067456133218,
+            "unit": "ns/iter",
+            "extra": "iterations: 554805\ncpu: 1300.6018042375235 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Naive_ToUpper_ASCII_AlreadyUpper",
+            "value": 1184.4498720093516,
+            "unit": "ns/iter",
+            "extra": "iterations: 590668\ncpu: 1184.343846289286 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Naive_ToLower_ASCII_Upper",
+            "value": 1434.1009388129278,
+            "unit": "ns/iter",
+            "extra": "iterations: 547926\ncpu: 1434.0723437106508 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ToUpper_ASCII_Lower",
+            "value": 1662.2798875258097,
+            "unit": "ns/iter",
+            "extra": "iterations: 421430\ncpu: 1662.0515316897174 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ToUpper_ASCII_AlreadyUpper",
+            "value": 1663.7734120400305,
+            "unit": "ns/iter",
+            "extra": "iterations: 421311\ncpu: 1663.6138932997242 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ToUpper_CJK",
+            "value": 4911.659081901374,
+            "unit": "ns/iter",
+            "extra": "iterations: 141292\ncpu: 4910.980579225996 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ToUpper_Mixed",
+            "value": 3325.3018568572056,
+            "unit": "ns/iter",
+            "extra": "iterations: 210517\ncpu: 3325.272424554788 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ToUpper_Eszett",
+            "value": 639.513660987712,
+            "unit": "ns/iter",
+            "extra": "iterations: 1095565\ncpu: 639.4316156503702 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ToLower_ASCII_Upper",
+            "value": 1910.1548505934993,
+            "unit": "ns/iter",
+            "extra": "iterations: 366450\ncpu: 1910.053281484511 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ToLower_CJK",
+            "value": 3878.323468061082,
+            "unit": "ns/iter",
+            "extra": "iterations: 180735\ncpu: 3877.787655960388 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ToTitle_ASCII_Lower",
+            "value": 8604.1534193662,
+            "unit": "ns/iter",
+            "extra": "iterations: 81287\ncpu: 8603.505394466472 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ToTitle_Mixed",
+            "value": 13141.314693106577,
+            "unit": "ns/iter",
+            "extra": "iterations: 52950\ncpu: 13140.451199244653 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_CaseFold_ASCII_Lower",
+            "value": 1697.6895230065309,
+            "unit": "ns/iter",
+            "extra": "iterations: 412752\ncpu: 1697.2937017870186 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_CaseFold_ASCII_Mixed",
+            "value": 1702.0618431336509,
+            "unit": "ns/iter",
+            "extra": "iterations: 411994\ncpu: 1701.9024573173413 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_CaseFold_Eszett",
+            "value": 568.9101700120748,
+            "unit": "ns/iter",
+            "extra": "iterations: 1230736\ncpu: 568.8434733362768 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ToWString_ASCII",
+            "value": 603.303819396548,
+            "unit": "ns/iter",
+            "extra": "iterations: 1159712\ncpu: 603.253196483269 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ToWString_CJK",
+            "value": 2548.752911928745,
+            "unit": "ns/iter",
+            "extra": "iterations: 274732\ncpu: 2548.3546037593223 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ToWString_Emoji",
+            "value": 425.89533503263175,
+            "unit": "ns/iter",
+            "extra": "iterations: 1666957\ncpu: 425.875863024662 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_FromWString_ASCII",
+            "value": 542.9627095066111,
+            "unit": "ns/iter",
+            "extra": "iterations: 1292501\ncpu: 542.8740426506446 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_FromWString_CJK",
+            "value": 2045.2797870381976,
+            "unit": "ns/iter",
+            "extra": "iterations: 342221\ncpu: 2045.0300478345996 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_FromWString_Emoji",
+            "value": 286.5122238539329,
+            "unit": "ns/iter",
+            "extra": "iterations: 2457531\ncpu: 286.4569480507041 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_FromLatin1_ASCII",
+            "value": 1212.08085306726,
+            "unit": "ns/iter",
+            "extra": "iterations: 577727\ncpu: 1211.9045985387586 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_FromLatin1_FullLatin1",
+            "value": 1884.9325728068225,
+            "unit": "ns/iter",
+            "extra": "iterations: 371497\ncpu: 1884.6901805398288 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ToLatin1_ASCII",
+            "value": 1790.9862235985925,
+            "unit": "ns/iter",
+            "extra": "iterations: 391031\ncpu: 1790.697722175483 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_ToLatin1_CJK_Fails",
+            "value": 44.45596506419951,
+            "unit": "ns/iter",
+            "extra": "iterations: 15741331\ncpu: 44.450272343552186 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Naive_ToWString_ASCII",
+            "value": 1022.9707662612908,
+            "unit": "ns/iter",
+            "extra": "iterations: 685954\ncpu: 1022.8248439399732 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Naive_ToWString_CJK",
+            "value": 2158.8345964636555,
+            "unit": "ns/iter",
+            "extra": "iterations: 325646\ncpu: 2158.6926386321165 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Naive_FromWString_ASCII",
+            "value": 1465.4326034175199,
+            "unit": "ns/iter",
+            "extra": "iterations: 477361\ncpu: 1465.0957011569853 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_Naive_FromWString_CJK",
+            "value": 4278.9423127376285,
+            "unit": "ns/iter",
+            "extra": "iterations: 163901\ncpu: 4278.612595408188 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_FromUtf8_ASCII",
+            "value": 62.00490045017609,
+            "unit": "ns/iter",
+            "extra": "iterations: 11302431\ncpu: 61.993819559703496 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_FromUtf8_CJK",
+            "value": 356.1262316433631,
+            "unit": "ns/iter",
+            "extra": "iterations: 1964753\ncpu: 356.097844360078 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_FromUtf8_Mixed",
+            "value": 230.86832767537956,
+            "unit": "ns/iter",
+            "extra": "iterations: 3034662\ncpu: 230.8174089898652 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_FromUtf8_Emoji",
+            "value": 244.7251044880459,
+            "unit": "ns/iter",
+            "extra": "iterations: 2861811\ncpu: 244.70997281092346 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_FromUtf8_Invalid",
+            "value": 22.516702073164787,
+            "unit": "ns/iter",
+            "extra": "iterations: 31088925\ncpu: 22.51443792282951 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_NaiveValidate_ASCII",
+            "value": 366.2348569554708,
+            "unit": "ns/iter",
+            "extra": "iterations: 1905875\ncpu: 366.2006280579803 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_NaiveValidate_CJK",
+            "value": 2452.7784161372624,
+            "unit": "ns/iter",
+            "extra": "iterations: 324965\ncpu: 2452.2516055575297 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_NaiveValidate_Mixed",
+            "value": 1242.4943096114428,
+            "unit": "ns/iter",
+            "extra": "iterations: 537661\ncpu: 1242.4622020194909 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_NaiveValidate_Emoji",
+            "value": 996.2268515421365,
+            "unit": "ns/iter",
+            "extra": "iterations: 702671\ncpu: 996.0755004831524 ns\nthreads: 1"
+          },
+          {
+            "name": "BM_NaiveValidate_Invalid",
+            "value": 186.5016210417297,
+            "unit": "ns/iter",
+            "extra": "iterations: 3756535\ncpu: 186.46965807585977 ns\nthreads: 1"
           }
         ]
       }
