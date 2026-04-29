@@ -63,7 +63,7 @@ PenaltyExcessCharacter: 10
 # Always break template declarations
 AlwaysBreakTemplateDeclarations: Yes
 
-# Keep empty lines at end of blocks
+# Add/fix end-of-namespace comments
 FixNamespaceComments: true
 
 # Allow short case labels to fall through
