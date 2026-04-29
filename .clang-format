@@ -66,9 +66,6 @@ AlwaysBreakTemplateDeclarations: Yes
 # Add/fix end-of-namespace comments
 FixNamespaceComments: true
 
-# Allow short case labels to fall through
-AllowShortCaseLabelsOnASingleLine: false
-
 # Attributes
 AttributeMacros:
   - '[[nodiscard]]'
