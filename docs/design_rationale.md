@@ -70,7 +70,7 @@ texere's goal: **provide a zero-overhead, Unicode-correct string value type**, o
 from_utf8(sv)            → expected<string, error>  // strict validation
 from_utf8_lossy(sv)      → string                   // replace with U+FFFD
 from_utf8_unchecked(sv)  → string                   // skip validation (unsafe)
-"..."_ts                 → string                   // consteval, compile-time check
+"..."_ts                 → string                   // validated; ill-formed bytes → U+FFFD
 ```
 
 **Rationale**: The caller must choose one of the three paths, and the choice itself acts as documentation. The `_ts` literal eliminates the validation cost for compile-time-known strings. The name `from_utf8_unchecked` makes the danger explicit.
