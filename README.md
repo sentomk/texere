@@ -22,6 +22,8 @@
 - **Three-tier iteration**: `bytes()` → `codepoints()` → `graphemes()`, corresponding to the three Unicode granularity levels
 - **Explicit normalization**: no automatic NFC; provides `normalize()` and `equals_normalized()`
 - **Opaque Index**: obtainable only from iterators, preventing confusion between byte offsets and grapheme indices
+- **Mutation API**: `operator+` / `append` / `insert` / `erase` / `replace` — positions via opaque `Index`, counts in grapheme clusters; an `Index` falling inside a cluster is a reported error (`errc::not_grapheme_boundary`), never silent corruption
+- **Hashable**: `std::hash` specializations for `txt::string` and `txt::string_view` — usable as `unordered_map` keys
 - **Unicode 15.1**: grapheme cluster boundaries, case mapping, and normalization all based on Unicode 15.1
 
 ---
@@ -89,6 +91,10 @@ g.index();                   // opaque txt::Index
 for (auto byte : s.bytes())       { /* uint8_t */ }
 for (auto cp   : s.codepoints())  { /* char32_t */ }
 for (auto gref : s.graphemes())   { /* txt::grapheme_ref */ }
+
+// Concatenation & mutation
+auto t = s + " more"_ts;
+t.erase(t.grapheme_at(1).index(), 2);   // erase 2 grapheme clusters
 
 // Normalization
 txt::normalize(s, txt::normalization_form::NFC);

@@ -128,6 +128,8 @@ enum class errc : std::uint8_t {
     surrogate_pair  = 3,  //< Input contains lone UTF-16 surrogates (U+D800–U+DFFF).
     out_of_range    = 4,  //< Code point value exceeds U+10FFFF.
     conversion_fail = 5,  //< Generic conversion failure (e.g. wstring round-trip).
+    invalid_index         = 6,  //< Index refers to a byte offset outside this string.
+    not_grapheme_boundary = 7,  //< Index falls in the middle of a grapheme cluster.
 };
 
 // Error value returned by texere factory functions.
@@ -144,9 +146,72 @@ struct error {
             case errc::surrogate_pair:  return "utf-16 surrogate in utf-8 stream";
             case errc::out_of_range:    return "code point out of range";
             case errc::conversion_fail: return "conversion failed";
+            case errc::invalid_index:         return "index out of range for this string";
+            case errc::not_grapheme_boundary: return "index does not fall on a grapheme cluster boundary";
         }
         return "unknown error";
     }
+};
+
+
+// ---------------------------------------------------------------------------
+// expected<void, E>  –  value-less specialisation
+// ---------------------------------------------------------------------------
+// Used for operations that either succeed (no result value) or fail with an
+// error, e.g. the positional mutation members of txt::string.
+
+template <class E>
+class expected<void, E> {
+public:
+    using value_type = void;
+    using error_type = E;
+
+    // Construct in the (empty) value state.
+    expected() noexcept : has_value_(true) {}
+
+    // Construct in the error state via unexpected<E>.
+    expected(unexpected<E> u) : has_value_(false) {
+        new (&error_) E(std::move(u).value());
+    }
+
+    // Construct in the error state directly (unexpect tag).
+    template <class... Args>
+    explicit expected(unexpect_t, Args&&... args) : has_value_(false) {
+        new (&error_) E(std::forward<Args>(args)...);
+    }
+
+    // copy / move
+    expected(const expected& o) : has_value_(o.has_value_) {
+        if (!has_value_) new (&error_) E(o.error_);
+    }
+    expected(expected&& o) noexcept : has_value_(o.has_value_) {
+        if (!has_value_) new (&error_) E(std::move(o.error_));
+    }
+
+    ~expected() {
+        if (!has_value_) error_.~E();
+    }
+
+    expected& operator=(expected o) {
+        this->~expected();
+        new (this) expected(std::move(o));
+        return *this;
+    }
+
+    // --- observers ---
+
+    [[nodiscard]] bool has_value() const noexcept { return has_value_; }
+    explicit operator bool() const noexcept { return has_value_; }
+
+    [[nodiscard]] const E& error() const & noexcept { return error_; }
+    [[nodiscard]] E&       error() &       noexcept { return error_; }
+
+private:
+    bool has_value_;
+    union {
+        char no_value_;
+        E   error_;
+    };
 };
 
 } // namespace txt

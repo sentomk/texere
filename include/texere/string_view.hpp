@@ -11,8 +11,11 @@
 #include "grapheme.hpp"
 #include "iterator.hpp"
 
+#include "string.hpp"  // complete type for the conversion constructor below
+
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <string_view>
 
 namespace txt {
@@ -131,6 +134,11 @@ inline std::size_t string_view::length() const noexcept {
     return count;
 }
 
+// Defined after txt::string is complete (this header includes string.hpp;
+// string.hpp only forward-declares string_view, so there is no cycle).
+inline string_view::string_view(const string& s) noexcept
+    : string_view(s.to_std_string_view().data(), s.to_std_string_view().size()) {}
+
 inline grapheme_ref string_view::grapheme_at(std::size_t n) const noexcept {
     auto it = graphemes().begin();
     auto end = graphemes().end();
@@ -144,3 +152,16 @@ inline grapheme_ref string_view::grapheme_at(std::size_t n) const noexcept {
 }
 
 } // namespace txt
+
+// ===========================================================================
+// std::hash support  (byte-level; agrees with hash<txt::string>)
+// ===========================================================================
+
+namespace std {
+template <>
+struct hash<txt::string_view> {
+    std::size_t operator()(const txt::string_view& s) const noexcept {
+        return std::hash<std::string_view>{}(s.to_std_string_view());
+    }
+};
+} // namespace std

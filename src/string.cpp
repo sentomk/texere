@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #include <texere/string.hpp>
+#include <texere/string_view.hpp>
 
 #ifdef TEXERE_HAS_SIMDUTF
 #include <simdutf.h>
@@ -121,6 +122,169 @@ grapheme_ref string::grapheme_at(std::size_t n) const noexcept {
         return *it;
     }
     return grapheme_ref(std::string_view(), Index(storage_.size()));
+}
+
+
+// ---------------------------------------------------------------------------
+// Mutation helpers
+// ---------------------------------------------------------------------------
+
+namespace detail {
+
+// True when `off` may be used as a grapheme-cluster boundary of `s`:
+// either the one-past-end offset, or a byte that is not a UTF-8
+// continuation byte (0b10xxxxxx).
+bool is_grapheme_start(std::string_view s, std::size_t off) noexcept {
+    if (off == s.size()) return true;
+    if (off > s.size()) return false;
+    return (static_cast<unsigned char>(s[off]) & 0xC0) != 0x80;
+}
+
+// Byte offset of the cluster that begins `grapheme_count` clusters after the
+// cluster starting at `begin_off` (clamped at the end of `s`).
+//
+// @complexity O(n) - scans clusters from the start of the string.
+std::size_t offset_after_graphemes(std::string_view s, std::size_t begin_off,
+                                   std::size_t grapheme_count) noexcept {
+    std::size_t end_off = begin_off;
+    grapheme_range range(s.data(), s.size());
+    for (auto it = range.begin(); it != range.end(); ++it) {
+        const grapheme_ref g = *it;
+        const std::size_t start = g.index().byte_offset();
+        if (start < begin_off) continue;
+        if (grapheme_count == 0) {
+            end_off = start;
+            break;
+        }
+        --grapheme_count;
+        end_off = start + g.byte_size();
+    }
+    return end_off;
+}
+
+} // namespace detail
+
+// ---------------------------------------------------------------------------
+// Concatenation & append
+// ---------------------------------------------------------------------------
+
+string& string::operator+=(const string& rhs) {
+    storage_ += rhs.storage_;
+    return *this;
+}
+
+string& string::append(string_view sv) {
+    const std::string_view bytes = sv.to_std_string_view();
+    const char* own_begin = storage_.data();
+    const char* own_end   = own_begin + storage_.size();
+    if (bytes.data() >= own_begin && bytes.data() < own_end) {
+        // sv aliases this string's storage; appending may reallocate and
+        // invalidate the view, so copy first.
+        std::string copy(bytes);
+        storage_ += copy;
+    } else {
+        storage_ += bytes;
+    }
+    return *this;
+}
+
+string operator+(string lhs, const string& rhs) {
+    lhs.storage_.reserve(lhs.storage_.size() + rhs.storage_.size());
+    lhs.storage_ += rhs.storage_;
+    return lhs;
+}
+
+// ---------------------------------------------------------------------------
+// Positional mutation
+// ---------------------------------------------------------------------------
+
+expected<void, error> string::insert(Index at, string_view sv) {
+    const std::size_t off = at.byte_offset();
+    if (off > storage_.size()) {
+        return unexpected<error>(error{errc::invalid_index, storage_.size()});
+    }
+    if (!detail::is_grapheme_start(storage_, off)) {
+        return unexpected<error>(error{errc::not_grapheme_boundary, off});
+    }
+    storage_.insert(off, sv.to_std_string_view());
+    return {};
+}
+
+expected<void, error> string::erase(Index begin, std::size_t grapheme_count) {
+    const std::size_t off = begin.byte_offset();
+    if (off > storage_.size()) {
+        return unexpected<error>(error{errc::invalid_index, storage_.size()});
+    }
+    if (!detail::is_grapheme_start(storage_, off)) {
+        return unexpected<error>(error{errc::not_grapheme_boundary, off});
+    }
+    const std::size_t end_off =
+        detail::offset_after_graphemes(storage_, off, grapheme_count);
+    storage_.erase(off, end_off - off);
+    return {};
+}
+
+expected<void, error> string::replace(Index begin, std::size_t grapheme_count,
+                                      string_view replacement) {
+    const std::size_t off = begin.byte_offset();
+    if (off > storage_.size()) {
+        return unexpected<error>(error{errc::invalid_index, storage_.size()});
+    }
+    if (!detail::is_grapheme_start(storage_, off)) {
+        return unexpected<error>(error{errc::not_grapheme_boundary, off});
+    }
+    const std::size_t end_off =
+        detail::offset_after_graphemes(storage_, off, grapheme_count);
+    const std::string_view bytes = replacement.to_std_string_view();
+    const char* own_begin = storage_.data();
+    const char* own_end   = own_begin + storage_.size();
+    if (bytes.data() >= own_begin && bytes.data() < own_end) {
+        // Replacement aliases this string's storage; std::string::replace may
+        // reallocate, so go through a copy.
+        std::string copy(bytes);
+        storage_.replace(off, end_off - off, copy);
+    } else {
+        storage_.replace(off, end_off - off, bytes);
+    }
+    return {};
+}
+
+// ---------------------------------------------------------------------------
+// Substring & search
+// ---------------------------------------------------------------------------
+
+string string::substr(Index begin, std::size_t count) const {
+    const std::size_t off = begin.byte_offset();
+    if (off >= storage_.size() || count == 0) {
+        return string();
+    }
+    const std::size_t end_off = detail::offset_after_graphemes(storage_, off, count);
+    return string(std::string(storage_, off, end_off - off));
+}
+
+Index string::find(string_view needle) const noexcept {
+    const std::size_t pos = std::string_view(storage_).find(needle.to_std_string_view());
+    if (pos == std::string_view::npos) {
+        return Index(storage_.size());
+    }
+    return Index(pos);
+}
+
+Index string_view::find(string_view needle) const noexcept {
+    const std::size_t pos = sv_.find(needle.sv_);
+    if (pos == std::string_view::npos) {
+        return Index(sv_.size());
+    }
+    return Index(pos);
+}
+
+string_view string_view::substr(Index begin, std::size_t count) const noexcept {
+    const std::size_t off = begin.byte_offset();
+    if (off >= sv_.size() || count == 0) {
+        return string_view();
+    }
+    const std::size_t end_off = detail::offset_after_graphemes(sv_, off, count);
+    return string_view(sv_.substr(off, end_off - off));
 }
 
 } // namespace txt
