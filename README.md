@@ -65,7 +65,7 @@ This deliberate design choice ensures **industrial-grade build performance**:
 
 using namespace txt::literals;
 
-// Compile-time literal (consteval UTF-8 validation)
+// UTF-8 literal: validated, ill-formed bytes become U+FFFD
 auto greeting = "こんにちは"_ts;
 
 // Strict factory (runtime validation)

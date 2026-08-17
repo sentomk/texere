@@ -118,6 +118,37 @@ TEST_SUITE("string literal _ts") {
         CHECK(s.size_bytes() == 9);
     }
 
+    TEST_CASE("empty literal") {
+        auto s = ""_ts;
+        CHECK(s.empty());
+        CHECK(s.size_bytes() == 0);
+    }
+
+    TEST_CASE("emoji literal") {
+        auto s = "👦"_ts;   // U+1F466, one 4-byte sequence
+        CHECK(s.size_bytes() == 4);
+        CHECK(s.length() == 1);
+    }
+
+    TEST_CASE("shortest-form boundary code points are accepted") {
+        CHECK("\xC2\x80"_ts.size_bytes() == 2);          // U+0080
+        CHECK("\xE0\xA0\x80"_ts.size_bytes() == 3);      // U+0800
+        CHECK("\xF0\x90\x80\x80"_ts.size_bytes() == 4); // U+10000
+        CHECK("\xF4\x8F\xBF\xBF"_ts.size_bytes() == 4); // U+10FFFF
+    }
+
+    // Ill-formed literals degrade to U+FFFD (from_utf8_lossy semantics)
+    // rather than passing through unchecked - the pre-fix behaviour silently
+    // violated the "storage is always valid UTF-8" invariant.
+    TEST_CASE("ill-formed literal degrades to U+FFFD") {
+        auto s = "\x80"_ts;   // stray continuation byte
+        CHECK(s.size_bytes() == 3);   // one U+FFFD = EF BF BD
+        CHECK(s.length() == 1);
+
+        auto t = "\xC0\xAF"_ts;     // overlong slash -> U+FFFD
+        CHECK(t.size_bytes() == 3);
+    }
+
 }
 
 // ============================================================================

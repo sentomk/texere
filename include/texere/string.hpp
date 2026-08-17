@@ -227,14 +227,6 @@ private:
     std::string storage_; //< UTF-8 encoded backing store (SSO-enabled).
 };
 
-// ===========================================================================
-// User-defined literal  _ts
-// ===========================================================================
-
-namespace literals {
-    inline txt::string operator""_ts(const char* str, std::size_t len);
-} // namespace literals
-
 } // namespace txt
 
 // ===========================================================================
@@ -248,19 +240,32 @@ inline string string::from_utf8_unchecked(std::string_view sv) noexcept {
 }
 
 namespace detail {
-    expected<std::string, error> validate_utf8(std::string_view sv);
-} // namespace detail
 
+expected<std::string, error> validate_utf8(std::string_view sv);
+
+} // namespace detail
 } // namespace txt
+
+// ===========================================================================
+// User-defined literal  _ts
+// ===========================================================================
 
 namespace txt {
 namespace literals {
+
+// "..."_ts - constructs a txt::string from a string literal.
+//
+// The bytes are validated; ill-formed sequences are replaced with U+FFFD
+// (from_utf8_lossy() semantics).  A literal can therefore never violate
+// the class invariant that storage is valid UTF-8.
+//
+// Note: compile-time rejection would require string-literal-operator
+// templates (N3599), which were never adopted into the standard and are
+// not implemented by any mainstream compiler (GCC, Clang, MSVC) - runtime
+// validation is the best available point of defence.
 inline txt::string operator""_ts(const char* str, std::size_t len) {
-    auto validated = txt::detail::validate_utf8(std::string_view(str, len));
-    if (!validated) {
-        return txt::string::from_utf8_unchecked(std::string_view(str, len));
-    }
-    return txt::string::from_utf8_unchecked(std::string_view(str, len));
+    return txt::string::from_utf8_lossy(std::string_view(str, len));
 }
+
 } // namespace literals
 } // namespace txt
