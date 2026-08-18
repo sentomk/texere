@@ -29,7 +29,7 @@ adoption of the library. Each milestone lists **deliverables** and an
 The thesis of this project: correctness you can *see*. Phase 1 delivers the
 two artifacts that make Unicode honesty visible in a terminal.
 
-### M1. Width module (first self-developed algorithm)
+### Width module (first self-developed algorithm)
 
 The one gap neither backend fills: **display width** (how many terminal
 cells a grapheme occupies). uni-algo has no East Asian Width support at all
@@ -51,13 +51,13 @@ contribution.
   agrees with unicode-width on ≥ its emoji test set; zero per-call
   allocations.
 
-### M2. `txt wc -w` (fifth column)
+### `txt wc -w` (fifth column)
 
 - **Deliverable**: `-w` display-width column in `txt wc`.
 - **Acceptance**: `你好` reports width 4, one emoji family reports 2 —
   one-line demo in README.
 
-### M3. `txt align` (the flagship)
+### `txt align` (the flagship)
 
 Width-aware `column`/`align` replacement — the tool no terminal toolbox has
 gotten right. `column -t` breaks on CJK and emoji; `txt align` won't.
@@ -70,7 +70,7 @@ gotten right. `column -t` breaks on CJK and emoji; `txt align` won't.
   `txt align` clean) — the single most shareable artifact this project can
   produce.
 
-### M4. `txt fold` / `txt elide`
+### `txt fold` / `txt elide`
 
 - **Deliverables**: width-aware line wrapping (never splits a cluster) and
   truncation with ellipsis; `-w` reuses width core.
@@ -128,7 +128,7 @@ on the flagship demo string used in README examples.
   silently drops case mapping for Cyrillic/Greek and most of UCD). Either
   grow it into an honest `TEXERE_BACKEND=minimal` (documented coverage:
   ASCII + Latin + Hangul, for no-network builds) or retire it. Decision
-  needs the M1 generator anyway — same table machinery.
+  needs the width generator anyway — same table machinery.
 - **Unicode version cadence**: document the upgrade path (UCD 16.0:
   regenerate tables, bump `unicode_version`, run test vectors). The
   generator from M1 makes this a one-PR chore instead of a rewrite.
