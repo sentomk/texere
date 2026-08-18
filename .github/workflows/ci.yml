@@ -169,9 +169,12 @@ jobs:
           output-file-path: benchmark_results.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
-          alert-threshold: '200%'
+          # GitHub-hosted runners mix CPU generations with ~2-3x spread;
+          # cross-run comparisons are only meaningful directionally.
+          # Keep the dashboard + PR comments, but do not block main on it.
+          alert-threshold: '300%'
           comment-on-alert: true
-          fail-on-alert: true
+          fail-on-alert: false
 
       - name: Deploy comparison dashboard
         run: |
