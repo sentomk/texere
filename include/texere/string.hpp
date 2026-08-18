@@ -175,7 +175,10 @@ public:
     // begin: Opaque byte-offset index (obtained from an iterator or
     //               grapheme_at()).
     // count: Number of grapheme clusters to include.
-    // Returns:       A new txt::string containing those clusters.
+    // Returns:       A new txt::string containing those clusters, or an empty
+    //               string if `begin` does not fall on a grapheme-cluster
+    //               boundary of this string (e.g. an Index obtained from a
+    //               different string) or lies at/ beyond the end.
     [[nodiscard]] string substr(Index begin, std::size_t count) const;
 
     // Searches for the first occurrence of `needle` (byte comparison).

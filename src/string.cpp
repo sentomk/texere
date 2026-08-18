@@ -258,6 +258,12 @@ string string::substr(Index begin, std::size_t count) const {
     if (off >= storage_.size() || count == 0) {
         return string();
     }
+    // Refuse to cut through a grapheme cluster: an Index that does not fall
+    // on a boundary (e.g. obtained from a different string) would otherwise
+    // yield an ill-formed UTF-8 substring, violating the class invariant.
+    if (!detail::is_grapheme_start(storage_, off)) {
+        return string();
+    }
     const std::size_t end_off = detail::offset_after_graphemes(storage_, off, count);
     return string(std::string(storage_, off, end_off - off));
 }
@@ -281,6 +287,10 @@ Index string_view::find(string_view needle) const noexcept {
 string_view string_view::substr(Index begin, std::size_t count) const noexcept {
     const std::size_t off = begin.byte_offset();
     if (off >= sv_.size() || count == 0) {
+        return string_view();
+    }
+    // As for string::substr: refuse an Index that cuts through a cluster.
+    if (!detail::is_grapheme_start(sv_, off)) {
         return string_view();
     }
     const std::size_t end_off = detail::offset_after_graphemes(sv_, off, count);

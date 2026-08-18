@@ -187,6 +187,22 @@ TEST_SUITE("string find and substr") {
         CHECK(s.substr(s.grapheme_at(0).index(), 0).empty());
     }
 
+    TEST_CASE("a foreign mid-cluster index yields empty, never corrupt") {
+        auto a = "\u65E5\u672C\u8A9E"_ts;   // cluster starts: 0, 3, 6
+        auto b = "\u03B1\u03B1\u03B1"_ts;   // 2-byte clusters: byte 3 is mid-cluster
+        auto sub = b.substr(a.grapheme_at(1).index(), 1);
+        CHECK(sub.empty());
+        // and the source is untouched
+        CHECK(b.length() == 3);
+    }
+
+    TEST_CASE("string_view substr refuses a foreign mid-cluster index") {
+        auto a = "\u65E5\u672C\u8A9E"_ts;
+        auto b = "\u03B1\u03B1\u03B1"_ts;
+        auto sv = string_view(b);
+        CHECK(sv.substr(a.grapheme_at(1).index(), 1).empty());
+    }
+
 }
 
 // ============================================================================
