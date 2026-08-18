@@ -144,8 +144,85 @@ TEST_SUITE("string_view iteration") {
 }
 
 // ============================================================================
-// find() / substr() from txt::string – TODO: not yet implemented
+// find() / substr() from txt::string
 // ============================================================================
+
+TEST_SUITE("string find and substr") {
+
+    TEST_CASE("find locates a substring") {
+        auto s = "hello world"_ts;
+        CHECK(s.find("o"_ts).byte_offset() == 4);
+        CHECK(s.find("world"_ts).byte_offset() == 6);
+    }
+
+    TEST_CASE("find miss returns the end sentinel") {
+        auto s = "hello"_ts;
+        CHECK(s.find("zz"_ts) == s.end_index());
+    }
+
+    TEST_CASE("find empty needle returns the begin index") {
+        auto s = "hello"_ts;
+        CHECK(s.find(""_ts).byte_offset() == 0);
+    }
+
+    TEST_CASE("substr extracts grapheme clusters") {
+        auto s = "\u65E5\u672C\u8A9E\u3067\u3059"_ts;   // 日本語です
+        auto sub = s.substr(s.grapheme_at(1).index(), 2);
+        CHECK(sub == "\u672C\u8A9E"_ts);                    // 本語
+    }
+
+    TEST_CASE("substr count clamps at the end") {
+        auto s = "hello"_ts;
+        auto sub = s.substr(s.grapheme_at(1).index(), 99);
+        CHECK(sub == "ello"_ts);
+    }
+
+    TEST_CASE("substr at the end index yields the empty string") {
+        auto s = "hello"_ts;
+        CHECK(s.substr(s.end_index(), 3).empty());
+    }
+
+    TEST_CASE("substr with zero count yields the empty string") {
+        auto s = "hello"_ts;
+        CHECK(s.substr(s.grapheme_at(0).index(), 0).empty());
+    }
+
+    TEST_CASE("a foreign mid-cluster index yields empty, never corrupt") {
+        auto a = "\u65E5\u672C\u8A9E"_ts;   // cluster starts: 0, 3, 6
+        auto b = "\u03B1\u03B1\u03B1"_ts;   // 2-byte clusters: byte 3 is mid-cluster
+        auto sub = b.substr(a.grapheme_at(1).index(), 1);
+        CHECK(sub.empty());
+        // and the source is untouched
+        CHECK(b.length() == 3);
+    }
+
+    TEST_CASE("string_view substr refuses a foreign mid-cluster index") {
+        auto a = "\u65E5\u672C\u8A9E"_ts;
+        auto b = "\u03B1\u03B1\u03B1"_ts;
+        auto sv = string_view(b);
+        CHECK(sv.substr(a.grapheme_at(1).index(), 1).empty());
+    }
+
+    TEST_CASE("string_view find locates a substring") {
+        auto sv = string_view("hello world", 11);
+        CHECK(sv.find(string_view("world", 5)).byte_offset() == 6);
+        CHECK(sv.find(string_view("zz", 2)) == sv.end_index());
+        CHECK(sv.find(string_view("", 0)).byte_offset() == 0);
+    }
+
+    TEST_CASE("string_view substr extracts clusters") {
+        auto sv = string_view("\u65E5\u672C\u8A9E\u3067\u3059", 15);   // 日本語です
+        auto sub = sv.substr(sv.grapheme_at(1).index(), 2);
+        CHECK(sub.as_chars() == "\u672C\u8A9E");                        // 本語
+    }
+
+    TEST_CASE("string_view substr at end / zero count yields empty") {
+        auto sv = string_view("hello", 5);
+        CHECK(sv.substr(sv.end_index(), 3).empty());
+        CHECK(sv.substr(sv.grapheme_at(0).index(), 0).empty());
+    }
+
+}
 
 // ============================================================================
 // Comparison

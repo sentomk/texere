@@ -12,6 +12,7 @@
 #include "iterator.hpp"
 
 #include <cstddef>
+#include <functional>
 #include <string>
 #include <string_view>
 
@@ -174,7 +175,10 @@ public:
     // begin: Opaque byte-offset index (obtained from an iterator or
     //               grapheme_at()).
     // count: Number of grapheme clusters to include.
-    // Returns:       A new txt::string containing those clusters.
+    // Returns:       A new txt::string containing those clusters, or an empty
+    //               string if `begin` does not fall on a grapheme-cluster
+    //               boundary of this string (e.g. an Index obtained from a
+    //               different string) or lies at/ beyond the end.
     [[nodiscard]] string substr(Index begin, std::size_t count) const;
 
     // Searches for the first occurrence of `needle` (byte comparison).
@@ -187,6 +191,42 @@ public:
     [[nodiscard]] Index end_index() const noexcept {
         return Index(storage_.size());
     }
+
+    // -----------------------------------------------------------------------
+    // Concatenation & append  (cannot fail: both operands are valid UTF-8)
+    // -----------------------------------------------------------------------
+
+    // Appends rhs and returns *this.
+    string& operator+=(const string& rhs);
+
+    // Appends the bytes of sv (assumed valid UTF-8 per string_view's
+    // contract) and returns *this.  txt::string converts implicitly.
+    //        @note Self-referencing views are handled safely.
+    string& append(string_view sv);
+
+    // -----------------------------------------------------------------------
+    // Positional mutation  (opaque Index + grapheme-cluster counts)
+    // -----------------------------------------------------------------------
+
+    // Inserts sv immediately before the grapheme cluster at Index `at`.
+    //
+    // at: Opaque index from this string (end_index() appends).
+    // sv: Bytes to insert (assumed valid UTF-8 per string_view's contract).
+    // Returns:      Error `invalid_index` if `at` lies beyond this string,
+    //              `not_grapheme_boundary` if `at` falls inside a cluster
+    //              (e.g. an Index obtained from a different string).
+    expected<void, error> insert(Index at, string_view sv);
+
+    // Removes `grapheme_count` clusters starting at the cluster beginning
+    // at `begin`.  The count is clamped at the end of the string.
+    //
+    // Returns: Error codes as for insert(); the empty range is a no-op.
+    expected<void, error> erase(Index begin, std::size_t grapheme_count);
+
+    // Replaces `grapheme_count` clusters starting at `begin` with sv.
+    // Equivalent to erase() followed by insert(), performed in one pass.
+    expected<void, error> replace(Index begin, std::size_t grapheme_count,
+                                 string_view replacement);
 
     // -----------------------------------------------------------------------
     // Normalization
@@ -221,6 +261,8 @@ public:
     const char operator[](std::size_t) const = delete;
 
 private:
+    friend string operator+(string lhs, const string& rhs);
+
     // Private constructor – only reachable from factory functions.
     explicit string(std::string storage) noexcept : storage_(std::move(storage)) {}
 
@@ -247,6 +289,18 @@ expected<std::string, error> validate_utf8(std::string_view sv);
 } // namespace txt
 
 // ===========================================================================
+// Concatenation
+// ===========================================================================
+
+namespace txt {
+
+// Concatenates two strings.  The left operand is taken by value so that
+// rvalue storage is reused (no extra allocation for temporaries).
+[[nodiscard]] string operator+(string lhs, const string& rhs);
+
+} // namespace txt
+
+// ===========================================================================
 // User-defined literal  _ts
 // ===========================================================================
 
@@ -269,3 +323,16 @@ inline txt::string operator""_ts(const char* str, std::size_t len) {
 
 } // namespace literals
 } // namespace txt
+
+// ===========================================================================
+// std::hash support  (enables unordered containers of txt::string)
+// ===========================================================================
+
+namespace std {
+template <>
+struct hash<txt::string> {
+    std::size_t operator()(const txt::string& s) const noexcept {
+        return std::hash<std::string_view>{}(s.to_std_string_view());
+    }
+};
+} // namespace std

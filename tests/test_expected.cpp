@@ -131,6 +131,50 @@ TEST_SUITE("from_utf8_lossy is infallible") {
 }
 
 // ============================================================================
+// expected<void, E> – value-less specialisation
+// ============================================================================
+
+TEST_SUITE("expected<void, E>") {
+
+    TEST_CASE("default constructs in the value state") {
+        txt::expected<void, txt::error> e;
+        CHECK(e.has_value());
+        CHECK(static_cast<bool>(e));
+    }
+
+    TEST_CASE("unexpect-tag construction enters the error state") {
+        txt::expected<void, txt::error> e(txt::unexpect,
+                                          txt::error{txt::errc::invalid_index, 7});
+        CHECK_FALSE(e.has_value());
+        CHECK(e.error().code == txt::errc::invalid_index);
+        CHECK(e.error().byte_position == 7);
+    }
+
+    TEST_CASE("unexpected<E> construction and copy/move assignment") {
+        txt::expected<void, txt::error> e(txt::unexpected<txt::error>(
+            txt::error{txt::errc::not_grapheme_boundary, 3}));
+        CHECK_FALSE(e.has_value());
+        CHECK(e.error().code == txt::errc::not_grapheme_boundary);
+
+        txt::expected<void, txt::error> copy = e;          // copy ctor
+        CHECK_FALSE(copy.has_value());
+        CHECK(copy.error().code == txt::errc::not_grapheme_boundary);
+
+        txt::expected<void, txt::error> moved = std::move(e);   // move ctor
+        CHECK_FALSE(moved.has_value());
+
+        txt::expected<void, txt::error> assigned;
+        assigned = copy;                                 // copy assignment
+        CHECK_FALSE(assigned.has_value());
+        CHECK(assigned.error().code == txt::errc::not_grapheme_boundary);
+
+        assigned = txt::expected<void, txt::error>();    // move assignment → value state
+        CHECK(assigned.has_value());
+    }
+
+}
+
+// ============================================================================
 // from_utf8_unchecked is infallible at runtime
 // ============================================================================
 

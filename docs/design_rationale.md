@@ -109,6 +109,30 @@ from_utf8_unchecked(sv)  → string                   // skip validation (unsafe
 
 ---
 
+### Q5 Mutation API: infallible append vs. validated positional edits
+
+**Problem**: Which mutation operations can fail, and how are failures reported without exceptions?
+
+**Decision**: Two tiers, split by what the type system already guarantees:
+
+| Tier | Operations | Failure channel |
+|------|------------|-----------------|
+| Whole-string | `operator+`, `operator+=`, `append` | Cannot fail — both operands are valid UTF-8 by construction |
+| Positional | `insert`, `erase`, `replace` | `expected<void, error>` with `errc::invalid_index` / `errc::not_grapheme_boundary` |
+
+Positional edits take an opaque `Index` plus a **grapheme-cluster count** (mirroring `substr`). Before touching storage, the byte offset is checked in O(1):
+
+- beyond `size_bytes()` → `invalid_index`
+- points at a UTF-8 continuation byte (`0b10xxxxxx`) → `not_grapheme_boundary`
+
+The continuation-byte check cannot detect every misuse (an `Index` from a *different* string that happens to land on a boundary is indistinguishable in O(1)), but it catches the common accidents, and cluster counts are always clamped at the end of the string so no overflow-style corruption is possible. `expected<void, E>` (a value-less specialisation added for this purpose) keeps the no-exceptions rule.
+
+Aliasing: `append`/`replace` copy first when the argument view points into the same string's storage, since `std::string` mutation may reallocate.
+
+`find`/`substr` on both `txt::string` and `txt::string_view` — previously declared but unimplemented — are now real, and `std::hash` specializations hash the raw bytes, matching byte-level `operator==`.
+
+---
+
 ## 3. Three-Tier Iterator Model
 
 texere provides three independent iterator levels corresponding to Unicode's three granularity levels:

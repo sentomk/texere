@@ -16,6 +16,8 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
+#include <unordered_map>
+
 #include <texere/string.hpp>
 #include <texere/string_view.hpp>
 #include <texere/normalize.hpp>
@@ -435,4 +437,288 @@ TEST_SUITE("grapheme_iterator") {
         CHECK((*it).index().byte_offset() == 3); ++it;
         CHECK(it == s.graphemes().end());
     }
+}
+
+// ============================================================================
+// Concatenation & append
+// ============================================================================
+
+TEST_SUITE("concatenation") {
+
+    TEST_CASE("operator+ concatenates two strings") {
+        auto s = "\u65E5\u672C"_ts + "\u8A9E"_ts;              // 日本 + 語
+        CHECK(s == "\u65E5\u672C\u8A9E"_ts);                   // 日本語
+        CHECK(s.size_bytes() == 9);
+    }
+
+    TEST_CASE("operator+ with empty operands") {
+        auto e = ""_ts;
+        CHECK(("a"_ts + e) == "a"_ts);
+        CHECK((e + "a"_ts) == "a"_ts);
+        CHECK((e + e).empty());
+    }
+
+    TEST_CASE("operands are not modified by operator+") {
+        auto a = "foo"_ts;
+        auto b = "bar"_ts;
+        auto c = a + b;
+        CHECK(a == "foo"_ts);
+        CHECK(b == "bar"_ts);
+        CHECK(c == "foobar"_ts);
+    }
+
+    TEST_CASE("operator+= appends in place and returns *this") {
+        auto s = "a"_ts;
+        auto& ref = (s += "b"_ts);
+        CHECK(&ref == &s);
+        CHECK(s == "ab"_ts);
+    }
+
+    TEST_CASE("append accepts a string_view") {
+        auto s = string::from_utf8_unchecked("ab");
+        s.append(string_view("cd", 2));
+        CHECK(s == "abcd"_ts);
+    }
+
+    TEST_CASE("append grows past the SSO buffer") {
+        auto s = "0123456789012345678901234567890123456789"_ts;  // 40 bytes
+        for (int i = 0; i < 5; ++i) {
+            s += s;
+        }
+        CHECK(s.size_bytes() == 40 * 32);
+    }
+
+    TEST_CASE("appending a view into this string is safe") {
+        auto s = "abc"_ts;
+        s.append(string_view(s));
+        CHECK(s == "abcabc"_ts);
+    }
+
+}
+
+// ============================================================================
+// insert
+// ============================================================================
+
+TEST_SUITE("insert") {
+
+    TEST_CASE("insert at the first cluster prepends") {
+        auto s = "world"_ts;
+        auto r = s.insert(s.grapheme_at(0).index(), "hello "_ts);
+        REQUIRE(r.has_value());
+        CHECK(s == "hello world"_ts);
+    }
+
+    TEST_CASE("insert at end_index appends") {
+        auto s = "hello"_ts;
+        auto r = s.insert(s.end_index(), " world"_ts);
+        REQUIRE(r.has_value());
+        CHECK(s == "hello world"_ts);
+    }
+
+    TEST_CASE("insert between CJK clusters") {
+        auto s = "\u65E5\u672C\u8A9E"_ts;                       // 日本語
+        auto r = s.insert(s.grapheme_at(1).index(), "\u30FB"_ts); // ・
+        REQUIRE(r.has_value());
+        CHECK(s == "\u65E5\u30FB\u672C\u8A9E"_ts);              // 日・本語
+    }
+
+    TEST_CASE("insert keeps multi-codepoint clusters intact") {
+        auto s = string::from_utf8_unchecked("a👨‍👩b");
+        REQUIRE(s.length() == 3);   // a | family | b
+        auto r = s.insert(s.grapheme_at(1).index(), "X"_ts);
+        REQUIRE(r.has_value());
+        CHECK(s.length() == 4);
+        CHECK(s.grapheme_at(0).utf8() == "a");
+        CHECK(s.grapheme_at(1).utf8() == "X");
+        CHECK(s.grapheme_at(2).byte_size() == s.grapheme_at(2).utf8().size());
+        CHECK(s.length() == 4);
+    }
+
+    TEST_CASE("insert into an empty string") {
+        auto s = ""_ts;
+        auto r = s.insert(s.end_index(), "hello"_ts);
+        REQUIRE(r.has_value());
+        CHECK(s == "hello"_ts);
+    }
+
+    TEST_CASE("inserting an empty view is a no-op success") {
+        auto s = "hello"_ts;
+        auto r = s.insert(s.grapheme_at(2).index(), string_view("", 0));
+        REQUIRE(r.has_value());
+        CHECK(s == "hello"_ts);
+    }
+
+    TEST_CASE("a foreign index landing mid-cluster is rejected") {
+        auto a = "\u65E5\u672C\u8A9E"_ts;   // cluster starts: 0, 3, 6
+        auto b = "\u03B1\u03B1\u03B1"_ts;   // 2-byte clusters: byte 3 is mid-cluster
+        auto r = b.insert(a.grapheme_at(1).index(), "x"_ts);
+        REQUIRE_FALSE(r.has_value());
+        CHECK(r.error().code == errc::not_grapheme_boundary);
+        CHECK(b == "\u03B1\u03B1\u03B1"_ts);   // unchanged
+    }
+
+    TEST_CASE("an index beyond the string is rejected") {
+        auto a = "\u65E5\u672C\u8A9E\u65E5\u672C\u8A9E"_ts;   // 18 bytes
+        auto b = "a"_ts;
+        auto r = b.insert(a.end_index(), "x"_ts);
+        REQUIRE_FALSE(r.has_value());
+        CHECK(r.error().code == errc::invalid_index);
+    }
+
+}
+
+// ============================================================================
+// erase
+// ============================================================================
+
+TEST_SUITE("erase") {
+
+    TEST_CASE("erasing zero clusters is a no-op success") {
+        auto s = "hello"_ts;
+        auto r = s.erase(s.grapheme_at(0).index(), 0);
+        REQUIRE(r.has_value());
+        CHECK(s == "hello"_ts);
+    }
+
+    TEST_CASE("erase the first cluster") {
+        auto s = "hello"_ts;
+        auto r = s.erase(s.grapheme_at(0).index(), 1);
+        REQUIRE(r.has_value());
+        CHECK(s == "ello"_ts);
+    }
+
+    TEST_CASE("a ZWJ family erases as a single cluster") {
+        auto s = string::from_utf8_unchecked("a👨‍👩b");
+        REQUIRE(s.length() == 3);
+        auto r = s.erase(s.grapheme_at(1).index(), 1);
+        REQUIRE(r.has_value());
+        CHECK(s.length() == 2);
+        CHECK(s == "ab"_ts);
+    }
+
+    TEST_CASE("erase middle ASCII clusters") {
+        auto s = "hello world"_ts;
+        auto r = s.erase(s.grapheme_at(5).index(), 6);   // " world"
+        REQUIRE(r.has_value());
+        CHECK(s == "hello"_ts);
+    }
+
+    TEST_CASE("erase count is clamped at the end") {
+        auto s = "hello"_ts;
+        auto r = s.erase(s.grapheme_at(1).index(), 99);
+        REQUIRE(r.has_value());
+        CHECK(s == "h"_ts);
+    }
+
+    TEST_CASE("a foreign mid-cluster index is rejected") {
+        auto a = "\u65E5\u672C\u8A9E"_ts;
+        auto b = "\u03B1\u03B1\u03B1"_ts;
+        auto r = b.erase(a.grapheme_at(1).index(), 1);
+        REQUIRE_FALSE(r.has_value());
+        CHECK(r.error().code == errc::not_grapheme_boundary);
+    }
+
+    TEST_CASE("an index beyond the string is rejected") {
+        auto a = "\u65E5\u672C\u8A9E\u65E5\u672C\u8A9E"_ts;   // 18 bytes
+        auto b = "a"_ts;
+        auto r = b.erase(a.end_index(), 1);
+        REQUIRE_FALSE(r.has_value());
+        CHECK(r.error().code == errc::invalid_index);
+    }
+
+}
+
+// ============================================================================
+// replace
+// ============================================================================
+
+TEST_SUITE("replace") {
+
+    TEST_CASE("replace with equal byte length") {
+        auto s = "hello"_ts;
+        auto r = s.replace(s.grapheme_at(1).index(), 3, "ELL"_ts);
+        REQUIRE(r.has_value());
+        CHECK(s == "hELLo"_ts);
+    }
+
+    TEST_CASE("replace with different length") {
+        auto s = "hello"_ts;
+        auto r = s.replace(s.grapheme_at(1).index(), 3, "E"_ts);
+        REQUIRE(r.has_value());
+        CHECK(s == "hEo"_ts);
+    }
+
+    TEST_CASE("replace with an empty view erases") {
+        auto s = "hello"_ts;
+        auto r = s.replace(s.grapheme_at(1).index(), 3, string_view("", 0));
+        REQUIRE(r.has_value());
+        CHECK(s == "ho"_ts);
+    }
+
+    TEST_CASE("replace a whole string") {
+        auto s = "abc"_ts;
+        auto r = s.replace(s.grapheme_at(0).index(), 3, "xyz"_ts);
+        REQUIRE(r.has_value());
+        CHECK(s == "xyz"_ts);
+    }
+
+    TEST_CASE("a replacement view aliasing this string is safe") {
+        auto s = "hello world"_ts;
+        auto tail = string_view(s.to_std_string_view().substr(6));  // "world", aliases s
+        auto r = s.replace(s.grapheme_at(0).index(), 5, tail);
+        REQUIRE(r.has_value());
+        CHECK(s == "world world"_ts);
+    }
+
+    TEST_CASE("a foreign mid-cluster index is rejected") {
+        auto a = "\u65E5\u672C\u8A9E"_ts;
+        auto b = "\u03B1\u03B1\u03B1"_ts;
+        auto r = b.replace(a.grapheme_at(1).index(), 1, "x"_ts);
+        REQUIRE_FALSE(r.has_value());
+        CHECK(r.error().code == errc::not_grapheme_boundary);
+    }
+
+    TEST_CASE("an index beyond the string is rejected") {
+        auto a = "\u65E5\u672C\u8A9E\u65E5\u672C\u8A9E"_ts;   // 18 bytes
+        auto b = "a"_ts;
+        auto r = b.replace(a.end_index(), 1, "x"_ts);
+        REQUIRE_FALSE(r.has_value());
+        CHECK(r.error().code == errc::invalid_index);
+    }
+
+}
+
+// ============================================================================
+// std::hash
+// ============================================================================
+
+TEST_SUITE("hash") {
+
+    TEST_CASE("equal strings hash equally") {
+        auto a = "\u65E5\u672C\u8A9E"_ts;
+        auto b = "\u65E5\u672C\u8A9E"_ts;
+        CHECK(std::hash<txt::string>{}(a) == std::hash<txt::string>{}(b));
+    }
+
+    TEST_CASE("string and string_view over the same bytes agree") {
+        auto s = "hello"_ts;
+        CHECK(std::hash<txt::string>{}(s) == std::hash<txt::string_view>{}(string_view(s)));
+    }
+
+    TEST_CASE("different strings hash differently") {
+        auto a = "hello"_ts;
+        auto b = "hellp"_ts;
+        CHECK(std::hash<txt::string>{}(a) != std::hash<txt::string>{}(b));
+    }
+
+    TEST_CASE("usable as unordered_map key") {
+        std::unordered_map<txt::string, int> m;
+        m["\u65E5\u672C"_ts] = 1;
+        m["hello"_ts] = 2;
+        CHECK(m.at("\u65E5\u672C"_ts) == 1);
+        CHECK(m.at("hello"_ts) == 2);
+        CHECK(m.find("nope"_ts) == m.end());
+    }
+
 }
