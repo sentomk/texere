@@ -28,6 +28,23 @@
 
 ---
 
+## Tools
+
+The repo also builds **`txt`**, a multi-call binary of Unicode-honest text tools powered by texere (currently `wc`; `align`/`fold` planned):
+
+```console
+$ printf 'I ð¨âð© CJK æ¥æ¬èª eÌ
+' > demo.txt
+
+$ txt wc demo.txt            # lines  graphemes  codepoints  bytes
+1 14 21 46
+
+$ wc -m demo.txt             # the system tool reports *bytes* as "chars"
+46 demo.txt
+```
+
+One emoji family: 25 bytes, 11 code points, **1 grapheme**. Build with `-DTEXERE_BUILD_TOOLS=ON` (default on).
+
 ## Benchmarks
 
 Benchmark results are tracked continuously via [github-action-benchmark](https://github.com/benchmark-action/github-action-benchmark) and visualized on the project's GitHub Pages:

@@ -27,6 +27,7 @@ endif()
 # Options
 # ============================================================================
 option(TEXERE_BUILD_TESTS      "Build unit tests"   ON)
+option(TEXERE_BUILD_TOOLS      "Build the txt command-line tools" ON)
 option(TEXERE_BUILD_BENCHMARKS "Build benchmarks"   OFF)
 option(TEXERE_USE_SIMDUTF      "Use simdutf for fast UTF-8 validation"  ON)
 option(TEXERE_USE_UNIALGO      "Use uni-algo for Unicode algorithms"     ON)
@@ -105,6 +106,14 @@ endif()
 if(TEXERE_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+endif()
+
+# ============================================================================
+# Tools (txt ...)
+# ============================================================================
+
+if(TEXERE_BUILD_TOOLS)
+    add_subdirectory(tools/txt)
 endif()
 
 # ============================================================================

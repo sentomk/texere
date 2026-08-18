@@ -30,11 +30,13 @@ add_executable(texere_tests
     test_case.cpp
     test_convert.cpp
     test_boundary.cpp
+    test_txt_wc.cpp
 )
 
 target_link_libraries(texere_tests PRIVATE
     texere::texere
     doctest::doctest
+    txt_tool_core
 )
 
 target_compile_features(texere_tests PRIVATE cxx_std_17)
