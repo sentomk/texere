@@ -203,6 +203,25 @@ TEST_SUITE("string find and substr") {
         CHECK(sv.substr(a.grapheme_at(1).index(), 1).empty());
     }
 
+    TEST_CASE("string_view find locates a substring") {
+        auto sv = string_view("hello world", 11);
+        CHECK(sv.find(string_view("world", 5)).byte_offset() == 6);
+        CHECK(sv.find(string_view("zz", 2)) == sv.end_index());
+        CHECK(sv.find(string_view("", 0)).byte_offset() == 0);
+    }
+
+    TEST_CASE("string_view substr extracts clusters") {
+        auto sv = string_view("\u65E5\u672C\u8A9E\u3067\u3059", 15);   // 日本語です
+        auto sub = sv.substr(sv.grapheme_at(1).index(), 2);
+        CHECK(sub.as_chars() == "\u672C\u8A9E");                        // 本語
+    }
+
+    TEST_CASE("string_view substr at end / zero count yields empty") {
+        auto sv = string_view("hello", 5);
+        CHECK(sv.substr(sv.end_index(), 3).empty());
+        CHECK(sv.substr(sv.grapheme_at(0).index(), 0).empty());
+    }
+
 }
 
 // ============================================================================

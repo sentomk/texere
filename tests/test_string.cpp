@@ -619,6 +619,14 @@ TEST_SUITE("erase") {
         CHECK(r.error().code == errc::not_grapheme_boundary);
     }
 
+    TEST_CASE("an index beyond the string is rejected") {
+        auto a = "\u65E5\u672C\u8A9E\u65E5\u672C\u8A9E"_ts;   // 18 bytes
+        auto b = "a"_ts;
+        auto r = b.erase(a.end_index(), 1);
+        REQUIRE_FALSE(r.has_value());
+        CHECK(r.error().code == errc::invalid_index);
+    }
+
 }
 
 // ============================================================================
@@ -669,6 +677,14 @@ TEST_SUITE("replace") {
         auto r = b.replace(a.grapheme_at(1).index(), 1, "x"_ts);
         REQUIRE_FALSE(r.has_value());
         CHECK(r.error().code == errc::not_grapheme_boundary);
+    }
+
+    TEST_CASE("an index beyond the string is rejected") {
+        auto a = "\u65E5\u672C\u8A9E\u65E5\u672C\u8A9E"_ts;   // 18 bytes
+        auto b = "a"_ts;
+        auto r = b.replace(a.end_index(), 1, "x"_ts);
+        REQUIRE_FALSE(r.has_value());
+        CHECK(r.error().code == errc::invalid_index);
     }
 
 }
