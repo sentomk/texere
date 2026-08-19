@@ -128,6 +128,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       bench: ${{ steps.gate.outputs.bench }}
+      dashboard: ${{ steps.gate.outputs.dashboard }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -174,6 +175,15 @@ jobs:
           else
             echo "reason=no perf-relevant path changed" >> "$GITHUB_STEP_SUMMARY"
             echo "bench=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          # The comparison dashboard deploys independently of benchmark runs:
+          # it reads data.js at view time, so it only needs a deploy when its
+          # own source changes. Not affected by the [skip bench] marker.
+          if printf '%s\n' "$CHANGED" | grep -qx 'docs/comparison.html'; then
+            echo "dashboard=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "dashboard=false" >> "$GITHUB_OUTPUT"
           fi
 
   benchmark:
@@ -229,11 +239,26 @@ jobs:
           comment-on-alert: true
           fail-on-alert: false
 
+  # comparison.html reads data.js at view time, so it deploys when its own
+  # source changes — not on every benchmark run. This keeps docs/* dashboard
+  # work shippable even though such merges skip the benchmark job.
+  deploy-dashboard:
+    name: Deploy comparison dashboard
+    needs: changes
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.dashboard == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Deploy comparison dashboard
         run: |
           cp docs/comparison.html /tmp/comparison.html
           git fetch origin gh-pages
           git checkout gh-pages
+          git pull --rebase origin gh-pages
           cp /tmp/comparison.html dev/bench/comparison.html
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
