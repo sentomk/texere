@@ -57,3 +57,6 @@ out/
 *~
 .DS_Store
 .cache
+
+# Agent/session state (pi, etc.)
+.pi/

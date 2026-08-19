@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+#
+# pre-commit — Local enforcement of texere's branching rules.
+#
+# Installed via `scripts/install-hooks.sh` (sets core.hooksPath to this
+# directory). CI enforces the same rules on push; this hook catches
+# violations before they leave the working copy.
+#
+#   1. Reject direct commits to protected branches (main, master, gh-pages).
+#   2. Validate the branch name against CONTRIBUTING.md prefixes via
+#      scripts/check-branch.sh.
+
+set -euo pipefail
+
+branch="$(git rev-parse --abbrev-ref HEAD)"
+
+case "$branch" in
+    main | master | gh-pages)
+        echo "error: direct commits to '$branch' are not allowed." >&2
+        echo "create a branch first:  bash scripts/new-branch.sh <type> <description>" >&2
+        echo "types: feat fix docs perf bench test ci build chore refactor alpha" >&2
+        exit 1
+        ;;
+esac
+
+"$(git rev-parse --show-toplevel)/scripts/check-branch.sh" "$branch"

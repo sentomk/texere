@@ -2,6 +2,15 @@
 
 This document provides context, architectural guidelines, and rules for AI agents (like Cursor, Gemini, Claude) contributing to the **texere** codebase. Please read this carefully before making any modifications.
 
+## 0. Agent Session Protocol (MANDATORY before any file change)
+
+1. **Never work on `main`.** Before writing or editing any file intended for commit, create a branch: `bash scripts/new-branch.sh <type> <description>` (types: `feat` `fix` `docs` `perf` `bench` `test` `ci` `build` `chore` `refactor` `alpha`). If uncommitted changes already exist on `main`, create the branch first — uncommitted work carries over.
+2. **Install hooks once per clone**: `bash scripts/install-hooks.sh`. The pre-commit hook blocks commits on `main`/`master`/`gh-pages` and validates branch names locally (CI enforces the same remotely). If the hook blocks you, you skipped rule 1.
+3. **Before committing**: `bash scripts/test.sh` must pass. Every new feature needs doctest coverage (see §6).
+4. **One logical change per commit.** Commit messages use the conventional prefix matching the branch type (`feat:`, `fix:`, `docs:`, ...).
+5. **API changes are multi-file commitments**: public header + implementation + tests + README + `docs/design_rationale.md` in the same change (per ROADMAP conventions).
+6. **Do not commit agent/session state** (`.pi/` and similar tool directories are git-ignored).
+
 ## 1. Project Overview
 **texere** is a C++17 Unicode-safe UTF-8 string library. It provides `txt::string`, a type-safe drop-in replacement for `std::string` in Unicode-aware contexts.
 - **Core Philosophy**: Zero-surprise, explicit Unicode correctness (Unicode 15.1), and high performance.
