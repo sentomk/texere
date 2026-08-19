@@ -60,7 +60,7 @@ static void BM_ToWString_ASCII(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAscii1k.size());
 }
-BENCHMARK(BM_ToWString_ASCII);
+BENCHMARK(BM_ToWString_ASCII)->Name("ToWString/txt/ascii");
 
 static void BM_ToWString_CJK(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kCJK1k);
@@ -70,7 +70,7 @@ static void BM_ToWString_CJK(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kCJK1k.size());
 }
-BENCHMARK(BM_ToWString_CJK);
+BENCHMARK(BM_ToWString_CJK)->Name("ToWString/txt/cjk");
 
 static void BM_ToWString_Emoji(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kEmoji100);
@@ -80,7 +80,7 @@ static void BM_ToWString_Emoji(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kEmoji100.size());
 }
-BENCHMARK(BM_ToWString_Emoji);
+BENCHMARK(BM_ToWString_Emoji)->Name("ToWString/txt/emoji");
 
 // ============================================================================
 // from_wstring – UTF-16 → UTF-8
@@ -94,7 +94,7 @@ static void BM_FromWString_ASCII(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * ws.size() * sizeof(wchar_t));
 }
-BENCHMARK(BM_FromWString_ASCII);
+BENCHMARK(BM_FromWString_ASCII)->Name("FromWString/txt/ascii");
 
 static void BM_FromWString_CJK(benchmark::State& state) {
     std::wstring ws(1000, L'\x4e2d'); // 中
@@ -104,7 +104,7 @@ static void BM_FromWString_CJK(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * ws.size() * sizeof(wchar_t));
 }
-BENCHMARK(BM_FromWString_CJK);
+BENCHMARK(BM_FromWString_CJK)->Name("FromWString/txt/cjk");
 
 static void BM_FromWString_Emoji(benchmark::State& state) {
     // 😀 in UTF-16 = D83D DE00
@@ -120,7 +120,7 @@ static void BM_FromWString_Emoji(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * ws.size() * sizeof(wchar_t));
 }
-BENCHMARK(BM_FromWString_Emoji);
+BENCHMARK(BM_FromWString_Emoji)->Name("FromWString/txt/emoji");
 
 // ============================================================================
 // from_latin1 – ISO-8859-1 → UTF-8
@@ -133,7 +133,7 @@ static void BM_FromLatin1_ASCII(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAscii1k.size());
 }
-BENCHMARK(BM_FromLatin1_ASCII);
+BENCHMARK(BM_FromLatin1_ASCII)->Name("FromLatin1/txt/ascii");
 
 static void BM_FromLatin1_FullLatin1(benchmark::State& state) {
     for (auto _ : state) {
@@ -142,7 +142,7 @@ static void BM_FromLatin1_FullLatin1(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kLatin1_1k.size());
 }
-BENCHMARK(BM_FromLatin1_FullLatin1);
+BENCHMARK(BM_FromLatin1_FullLatin1)->Name("FromLatin1/txt/full_latin1");
 
 // ============================================================================
 // to_latin1 – UTF-8 → ISO-8859-1
@@ -156,7 +156,7 @@ static void BM_ToLatin1_ASCII(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAscii1k.size());
 }
-BENCHMARK(BM_ToLatin1_ASCII);
+BENCHMARK(BM_ToLatin1_ASCII)->Name("ToLatin1/txt/ascii");
 
 static void BM_ToLatin1_CJK_Fails(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kCJK1k);
@@ -166,7 +166,7 @@ static void BM_ToLatin1_CJK_Fails(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kCJK1k.size());
 }
-BENCHMARK(BM_ToLatin1_CJK_Fails);
+BENCHMARK(BM_ToLatin1_CJK_Fails)->Name("ToLatin1/txt/cjk_fails");
 
 // ============================================================================
 // Naive baselines — hand-rolled codepoint iteration for conversion
@@ -245,7 +245,7 @@ static void BM_Naive_ToWString_ASCII(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAscii1k.size());
 }
-BENCHMARK(BM_Naive_ToWString_ASCII);
+BENCHMARK(BM_Naive_ToWString_ASCII)->Name("ToWString/naive/ascii");
 
 static void BM_Naive_ToWString_CJK(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kCJK1k);
@@ -255,7 +255,7 @@ static void BM_Naive_ToWString_CJK(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kCJK1k.size());
 }
-BENCHMARK(BM_Naive_ToWString_CJK);
+BENCHMARK(BM_Naive_ToWString_CJK)->Name("ToWString/naive/cjk");
 
 static void BM_Naive_FromWString_ASCII(benchmark::State& state) {
     std::wstring ws(1000, L'a');
@@ -265,7 +265,7 @@ static void BM_Naive_FromWString_ASCII(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * ws.size() * sizeof(wchar_t));
 }
-BENCHMARK(BM_Naive_FromWString_ASCII);
+BENCHMARK(BM_Naive_FromWString_ASCII)->Name("FromWString/naive/ascii");
 
 static void BM_Naive_FromWString_CJK(benchmark::State& state) {
     std::wstring ws(1000, L'\x4e2d');
@@ -275,4 +275,4 @@ static void BM_Naive_FromWString_CJK(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * ws.size() * sizeof(wchar_t));
 }
-BENCHMARK(BM_Naive_FromWString_CJK);
+BENCHMARK(BM_Naive_FromWString_CJK)->Name("FromWString/naive/cjk");

@@ -69,7 +69,7 @@ static void BM_Normalize_NFC_ASCII(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAscii1k.size());
 }
-BENCHMARK(BM_Normalize_NFC_ASCII);
+BENCHMARK(BM_Normalize_NFC_ASCII)->Name("Normalize.NFC/txt/ascii");
 
 static void BM_Normalize_NFC_NFD_to_NFC(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kNFD1000);
@@ -79,7 +79,7 @@ static void BM_Normalize_NFC_NFD_to_NFC(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kNFD1000.size());
 }
-BENCHMARK(BM_Normalize_NFC_NFD_to_NFC);
+BENCHMARK(BM_Normalize_NFC_NFD_to_NFC)->Name("Normalize.NFC/txt/nfd_input");
 
 static void BM_Normalize_NFC_CJK(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kCJK1k);
@@ -89,7 +89,7 @@ static void BM_Normalize_NFC_CJK(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kCJK1k.size());
 }
-BENCHMARK(BM_Normalize_NFC_CJK);
+BENCHMARK(BM_Normalize_NFC_CJK)->Name("Normalize.NFC/txt/cjk");
 
 // ============================================================================
 // normalized() – NFD
@@ -103,7 +103,7 @@ static void BM_Normalize_NFD_ASCII(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAscii1k.size());
 }
-BENCHMARK(BM_Normalize_NFD_ASCII);
+BENCHMARK(BM_Normalize_NFD_ASCII)->Name("Normalize.NFD/txt/ascii");
 
 static void BM_Normalize_NFD_NFC_to_NFD(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kNFC1000);
@@ -113,7 +113,7 @@ static void BM_Normalize_NFD_NFC_to_NFD(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kNFC1000.size());
 }
-BENCHMARK(BM_Normalize_NFD_NFC_to_NFD);
+BENCHMARK(BM_Normalize_NFD_NFC_to_NFD)->Name("Normalize.NFD/txt/nfc_input");
 
 // ============================================================================
 // normalized() – NFKC
@@ -127,7 +127,7 @@ static void BM_Normalize_NFKC_ASCII(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAscii1k.size());
 }
-BENCHMARK(BM_Normalize_NFKC_ASCII);
+BENCHMARK(BM_Normalize_NFKC_ASCII)->Name("Normalize.NFKC/txt/ascii");
 
 static void BM_Normalize_NFKC_Mixed(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kMixed1k);
@@ -137,7 +137,7 @@ static void BM_Normalize_NFKC_Mixed(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kMixed1k.size());
 }
-BENCHMARK(BM_Normalize_NFKC_Mixed);
+BENCHMARK(BM_Normalize_NFKC_Mixed)->Name("Normalize.NFKC/txt/mixed");
 
 // ============================================================================
 // normalized() – NFKD
@@ -151,7 +151,7 @@ static void BM_Normalize_NFKD_ASCII(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAscii1k.size());
 }
-BENCHMARK(BM_Normalize_NFKD_ASCII);
+BENCHMARK(BM_Normalize_NFKD_ASCII)->Name("Normalize.NFKD/txt/ascii");
 
 // ============================================================================
 // equals_normalized()
@@ -166,7 +166,7 @@ static void BM_EqualsNormalized_Equal_NFC(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kNFC1000.size());
 }
-BENCHMARK(BM_EqualsNormalized_Equal_NFC);
+BENCHMARK(BM_EqualsNormalized_Equal_NFC)->Name("EqualsNormalized/txt/equal_nfc");
 
 static void BM_EqualsNormalized_Equal_NFD_to_NFC(benchmark::State& state) {
     auto a = string::from_utf8_unchecked(kNFC1000);
@@ -177,7 +177,7 @@ static void BM_EqualsNormalized_Equal_NFD_to_NFC(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * (kNFC1000.size() + kNFD1000.size()));
 }
-BENCHMARK(BM_EqualsNormalized_Equal_NFD_to_NFC);
+BENCHMARK(BM_EqualsNormalized_Equal_NFD_to_NFC)->Name("EqualsNormalized/txt/equal_nfd_input");
 
 static void BM_EqualsNormalized_NotEqual(benchmark::State& state) {
     auto a = string::from_utf8_unchecked(kNFC1000);
@@ -188,7 +188,7 @@ static void BM_EqualsNormalized_NotEqual(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * (kNFC1000.size() + kAscii1k.size()));
 }
-BENCHMARK(BM_EqualsNormalized_NotEqual);
+BENCHMARK(BM_EqualsNormalized_NotEqual)->Name("EqualsNormalized/txt/not_equal");
 
 // ============================================================================
 // Naive baselines — no-op pass-through for normalized(), byte-level for equals
@@ -203,7 +203,7 @@ static void BM_Naive_Normalize_NFC_ASCII(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAscii1k.size());
 }
-BENCHMARK(BM_Naive_Normalize_NFC_ASCII);
+BENCHMARK(BM_Naive_Normalize_NFC_ASCII)->Name("Normalize.NFC/naive/ascii");
 
 static void BM_Naive_Normalize_NFC_NFD_to_NFC(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kNFD1000);
@@ -213,7 +213,7 @@ static void BM_Naive_Normalize_NFC_NFD_to_NFC(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kNFD1000.size());
 }
-BENCHMARK(BM_Naive_Normalize_NFC_NFD_to_NFC);
+BENCHMARK(BM_Naive_Normalize_NFC_NFD_to_NFC)->Name("Normalize.NFC/naive/nfd_input");
 
 static void BM_Naive_EqualsNormalized_Equal_NFC(benchmark::State& state) {
     auto a = string::from_utf8_unchecked(kNFC1000);
@@ -225,4 +225,4 @@ static void BM_Naive_EqualsNormalized_Equal_NFC(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kNFC1000.size());
 }
-BENCHMARK(BM_Naive_EqualsNormalized_Equal_NFC);
+BENCHMARK(BM_Naive_EqualsNormalized_Equal_NFC)->Name("EqualsNormalized/naive/equal_nfc");

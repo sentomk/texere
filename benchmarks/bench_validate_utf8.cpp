@@ -111,7 +111,7 @@ static void BM_FromUtf8_ASCII(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAscii1k.size());
 }
-BENCHMARK(BM_FromUtf8_ASCII);
+BENCHMARK(BM_FromUtf8_ASCII)->Name("Validate/txt/ascii");
 
 static void BM_FromUtf8_CJK(benchmark::State& state) {
     for (auto _ : state) {
@@ -120,7 +120,7 @@ static void BM_FromUtf8_CJK(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kCJK1k.size());
 }
-BENCHMARK(BM_FromUtf8_CJK);
+BENCHMARK(BM_FromUtf8_CJK)->Name("Validate/txt/cjk");
 
 static void BM_FromUtf8_Mixed(benchmark::State& state) {
     for (auto _ : state) {
@@ -129,7 +129,7 @@ static void BM_FromUtf8_Mixed(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kMixed1k.size());
 }
-BENCHMARK(BM_FromUtf8_Mixed);
+BENCHMARK(BM_FromUtf8_Mixed)->Name("Validate/txt/mixed");
 
 static void BM_FromUtf8_Emoji(benchmark::State& state) {
     for (auto _ : state) {
@@ -138,7 +138,7 @@ static void BM_FromUtf8_Emoji(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kEmoji100.size());
 }
-BENCHMARK(BM_FromUtf8_Emoji);
+BENCHMARK(BM_FromUtf8_Emoji)->Name("Validate/txt/emoji");
 
 static void BM_FromUtf8_Invalid(benchmark::State& state) {
     for (auto _ : state) {
@@ -147,7 +147,7 @@ static void BM_FromUtf8_Invalid(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kInvalid_Continuation.size());
 }
-BENCHMARK(BM_FromUtf8_Invalid);
+BENCHMARK(BM_FromUtf8_Invalid)->Name("Validate/txt/invalid");
 
 // ============================================================================
 // Benchmarks: naive scalar validation
@@ -160,7 +160,7 @@ static void BM_NaiveValidate_ASCII(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAscii1k.size());
 }
-BENCHMARK(BM_NaiveValidate_ASCII);
+BENCHMARK(BM_NaiveValidate_ASCII)->Name("Validate/naive/ascii");
 
 static void BM_NaiveValidate_CJK(benchmark::State& state) {
     for (auto _ : state) {
@@ -169,7 +169,7 @@ static void BM_NaiveValidate_CJK(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kCJK1k.size());
 }
-BENCHMARK(BM_NaiveValidate_CJK);
+BENCHMARK(BM_NaiveValidate_CJK)->Name("Validate/naive/cjk");
 
 static void BM_NaiveValidate_Mixed(benchmark::State& state) {
     for (auto _ : state) {
@@ -178,7 +178,7 @@ static void BM_NaiveValidate_Mixed(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kMixed1k.size());
 }
-BENCHMARK(BM_NaiveValidate_Mixed);
+BENCHMARK(BM_NaiveValidate_Mixed)->Name("Validate/naive/mixed");
 
 static void BM_NaiveValidate_Emoji(benchmark::State& state) {
     for (auto _ : state) {
@@ -187,7 +187,7 @@ static void BM_NaiveValidate_Emoji(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kEmoji100.size());
 }
-BENCHMARK(BM_NaiveValidate_Emoji);
+BENCHMARK(BM_NaiveValidate_Emoji)->Name("Validate/naive/emoji");
 
 static void BM_NaiveValidate_Invalid(benchmark::State& state) {
     for (auto _ : state) {
@@ -196,4 +196,4 @@ static void BM_NaiveValidate_Invalid(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kInvalid_Continuation.size());
 }
-BENCHMARK(BM_NaiveValidate_Invalid);
+BENCHMARK(BM_NaiveValidate_Invalid)->Name("Validate/naive/invalid");

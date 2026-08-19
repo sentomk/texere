@@ -54,7 +54,7 @@ static void BM_Length_ASCII(benchmark::State& state) {
         benchmark::DoNotOptimize(s.length());
     }
 }
-BENCHMARK(BM_Length_ASCII);
+BENCHMARK(BM_Length_ASCII)->Name("Length/txt/ascii");
 
 static void BM_Length_CJK(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kCJK1k);
@@ -62,7 +62,7 @@ static void BM_Length_CJK(benchmark::State& state) {
         benchmark::DoNotOptimize(s.length());
     }
 }
-BENCHMARK(BM_Length_CJK);
+BENCHMARK(BM_Length_CJK)->Name("Length/txt/cjk");
 
 static void BM_Length_Emoji_ZWJ(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kEmoji100);
@@ -70,7 +70,7 @@ static void BM_Length_Emoji_ZWJ(benchmark::State& state) {
         benchmark::DoNotOptimize(s.length());
     }
 }
-BENCHMARK(BM_Length_Emoji_ZWJ);
+BENCHMARK(BM_Length_Emoji_ZWJ)->Name("Length/txt/emoji_zwj");
 
 // ============================================================================
 // grapheme_at(n)  –  O(n) seek
@@ -82,7 +82,7 @@ static void BM_GraphemeAt_Middle_CJK(benchmark::State& state) {
         benchmark::DoNotOptimize(s.grapheme_at(500));
     }
 }
-BENCHMARK(BM_GraphemeAt_Middle_CJK);
+BENCHMARK(BM_GraphemeAt_Middle_CJK)->Name("GraphemeAt/txt/cjk_middle");
 
 // ============================================================================
 // Iteration  –  full grapheme traversal
@@ -99,7 +99,7 @@ static void BM_GraphemeIteration_CJK(benchmark::State& state) {
         benchmark::DoNotOptimize(n);
     }
 }
-BENCHMARK(BM_GraphemeIteration_CJK);
+BENCHMARK(BM_GraphemeIteration_CJK)->Name("GraphemeIteration/txt/cjk");
 
 static void BM_CodepointIteration_CJK(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kCJK1k);
@@ -112,7 +112,7 @@ static void BM_CodepointIteration_CJK(benchmark::State& state) {
         benchmark::DoNotOptimize(n);
     }
 }
-BENCHMARK(BM_CodepointIteration_CJK);
+BENCHMARK(BM_CodepointIteration_CJK)->Name("CodepointIteration/txt/cjk");
 
 // ============================================================================
 // from_utf8_lossy
@@ -125,7 +125,7 @@ static void BM_FromUtf8Lossy_ASCII(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAscii1k.size());
 }
-BENCHMARK(BM_FromUtf8Lossy_ASCII);
+BENCHMARK(BM_FromUtf8Lossy_ASCII)->Name("FromUtf8Lossy/txt/ascii");
 
 static void BM_FromUtf8Lossy_WithInvalidBytes(benchmark::State& state) {
     std::string input = kAscii1k;
@@ -137,7 +137,7 @@ static void BM_FromUtf8Lossy_WithInvalidBytes(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * input.size());
 }
-BENCHMARK(BM_FromUtf8Lossy_WithInvalidBytes);
+BENCHMARK(BM_FromUtf8Lossy_WithInvalidBytes)->Name("FromUtf8Lossy/txt/with_invalid_bytes");
 
 // ============================================================================
 // grapheme_at(n) – O(n) seek
@@ -149,7 +149,7 @@ static void BM_GraphemeAt_Begin_ASCII(benchmark::State& state) {
         benchmark::DoNotOptimize(s.grapheme_at(0));
     }
 }
-BENCHMARK(BM_GraphemeAt_Begin_ASCII);
+BENCHMARK(BM_GraphemeAt_Begin_ASCII)->Name("GraphemeAt/txt/ascii_begin");
 
 static void BM_GraphemeAt_End_ASCII(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kAscii1k);
@@ -157,7 +157,7 @@ static void BM_GraphemeAt_End_ASCII(benchmark::State& state) {
         benchmark::DoNotOptimize(s.grapheme_at(999));
     }
 }
-BENCHMARK(BM_GraphemeAt_End_ASCII);
+BENCHMARK(BM_GraphemeAt_End_ASCII)->Name("GraphemeAt/txt/ascii_end");
 
 // ============================================================================
 // Conversion
@@ -170,7 +170,7 @@ static void BM_ToStdString(benchmark::State& state) {
         benchmark::DoNotOptimize(copy);
     }
 }
-BENCHMARK(BM_ToStdString);
+BENCHMARK(BM_ToStdString)->Name("ToStdString/txt");
 
 static void BM_ToStdStringView(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kAscii1k);
@@ -179,7 +179,7 @@ static void BM_ToStdStringView(benchmark::State& state) {
         benchmark::DoNotOptimize(sv);
     }
 }
-BENCHMARK(BM_ToStdStringView);
+BENCHMARK(BM_ToStdStringView)->Name("ToStdStringView/txt");
 
 // ============================================================================
 // Byte iteration
@@ -196,4 +196,4 @@ static void BM_ByteIteration_CJK(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kCJK1k.size());
 }
-BENCHMARK(BM_ByteIteration_CJK);
+BENCHMARK(BM_ByteIteration_CJK)->Name("ByteIteration/txt/cjk");
