@@ -123,10 +123,63 @@ jobs:
           files: coverage.info
           fail_ci_if_error: false
 
+  changes:
+    name: Detect benchmark-relevant changes
+    runs-on: ubuntu-latest
+    outputs:
+      bench: ${{ steps.gate.outputs.bench }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # The benchmark job measures src/, include/ and benchmarks/ built via
+      # the top-level CMake files; docs/tests/scripts/tools cannot move the
+      # numbers, so they are skipped by default. Explicit markers in the
+      # commit message override path detection both ways:
+      #   [bench]       force-run (e.g. dependency bump outside the list)
+      #   [skip bench]  force-skip (e.g. comment-only change in src/)
+      - name: Decide whether benchmarks should run
+        id: gate
+        env:
+          BEFORE: ${{ github.event.before }}
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+          PERF_RE='^(src/|include/|benchmarks/|cmake/)|^CMakeLists\.txt$|^CMakePresets\.json$|^\.github/workflows/ci\.yml$'
+
+          if printf '%s' "$MSG" | grep -qF '[bench]'; then
+            echo "reason=marker '[bench]'" >> "$GITHUB_STEP_SUMMARY"
+            echo "bench=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if printf '%s' "$MSG" | grep -qF '[skip bench]'; then
+            echo "reason=marker '[skip bench]'" >> "$GITHUB_STEP_SUMMARY"
+            echo "bench=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          BASE="$BEFORE"
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            BASE="HEAD~1"
+          fi
+          CHANGED="$(git diff --name-only "$BASE" HEAD)"
+          echo "changed files ($BASE..HEAD):" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "$CHANGED" | sed 's/^/- /' >> "$GITHUB_STEP_SUMMARY"
+
+          if printf '%s\n' "$CHANGED" | grep -qE "$PERF_RE"; then
+            echo "reason=perf-relevant path changed" >> "$GITHUB_STEP_SUMMARY"
+            echo "bench=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "reason=no perf-relevant path changed" >> "$GITHUB_STEP_SUMMARY"
+            echo "bench=false" >> "$GITHUB_OUTPUT"
+          fi
+
   benchmark:
     name: Benchmark (Linux GCC)
-    needs: build-and-test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [build-and-test, changes]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.bench == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write

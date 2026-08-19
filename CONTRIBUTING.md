@@ -156,6 +156,23 @@ Benchmark changes should be kept separate from dashboard changes:
 - `bench/*` owns benchmark inputs, benchmark names, baselines, and smoke CI.
 - `docs/*` owns `docs/comparison.html` and presentation logic.
 
+### When benchmarks run on `main`
+
+The benchmark job runs on a `main` push only when a perf-relevant path changed
+(`src/`, `include/`, `benchmarks/`, `cmake/`, top-level CMake files, or
+`ci.yml` itself). Documentation, tests, scripts, and tooling changes skip it
+automatically, keeping the dashboard history free of no-op data points.
+
+Two commit-message markers override path detection, checked in this order:
+
+- `[bench]` — force a run (e.g. a dependency bump that touches none of the
+  listed paths).
+- `[skip bench]` — force a skip (e.g. a comment-only edit in `src/`).
+
+With squash merges the PR title becomes the default commit subject, so put the
+marker in the PR title (or the squash-commit body) to have it take effect. The
+gate job's summary in the Actions log records which rule fired.
+
 ## Commit Messages
 
 Use a conventional one-line summary:
