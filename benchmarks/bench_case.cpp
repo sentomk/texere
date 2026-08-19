@@ -92,7 +92,7 @@ static void BM_Naive_ToUpper_ASCII_Lower(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAsciiLower1k.size());
 }
-BENCHMARK(BM_Naive_ToUpper_ASCII_Lower);
+BENCHMARK(BM_Naive_ToUpper_ASCII_Lower)->Name("ToUpper/naive/ascii_lower");
 
 static void BM_Naive_ToUpper_ASCII_AlreadyUpper(benchmark::State& state) {
     for (auto _ : state) {
@@ -101,7 +101,7 @@ static void BM_Naive_ToUpper_ASCII_AlreadyUpper(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAsciiMixed1k.size());
 }
-BENCHMARK(BM_Naive_ToUpper_ASCII_AlreadyUpper);
+BENCHMARK(BM_Naive_ToUpper_ASCII_AlreadyUpper)->Name("ToUpper/naive/ascii_already_upper");
 
 static void BM_Naive_ToLower_ASCII_Upper(benchmark::State& state) {
     for (auto _ : state) {
@@ -110,7 +110,7 @@ static void BM_Naive_ToLower_ASCII_Upper(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAsciiMixed1k.size());
 }
-BENCHMARK(BM_Naive_ToLower_ASCII_Upper);
+BENCHMARK(BM_Naive_ToLower_ASCII_Upper)->Name("ToLower/naive/ascii_upper");
 
 // ============================================================================
 // to_upper
@@ -124,7 +124,7 @@ static void BM_ToUpper_ASCII_Lower(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAsciiLower1k.size());
 }
-BENCHMARK(BM_ToUpper_ASCII_Lower);
+BENCHMARK(BM_ToUpper_ASCII_Lower)->Name("ToUpper/txt/ascii_lower");
 
 static void BM_ToUpper_ASCII_AlreadyUpper(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kAsciiMixed1k);
@@ -134,7 +134,7 @@ static void BM_ToUpper_ASCII_AlreadyUpper(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAsciiMixed1k.size());
 }
-BENCHMARK(BM_ToUpper_ASCII_AlreadyUpper);
+BENCHMARK(BM_ToUpper_ASCII_AlreadyUpper)->Name("ToUpper/txt/ascii_already_upper");
 
 static void BM_ToUpper_CJK(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kCJK1k);
@@ -144,7 +144,7 @@ static void BM_ToUpper_CJK(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kCJK1k.size());
 }
-BENCHMARK(BM_ToUpper_CJK);
+BENCHMARK(BM_ToUpper_CJK)->Name("ToUpper/txt/cjk");
 
 static void BM_ToUpper_Mixed(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kMixed1k);
@@ -154,7 +154,7 @@ static void BM_ToUpper_Mixed(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kMixed1k.size());
 }
-BENCHMARK(BM_ToUpper_Mixed);
+BENCHMARK(BM_ToUpper_Mixed)->Name("ToUpper/txt/mixed");
 
 static void BM_ToUpper_Eszett(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kEszett100);
@@ -164,7 +164,7 @@ static void BM_ToUpper_Eszett(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kEszett100.size());
 }
-BENCHMARK(BM_ToUpper_Eszett);
+BENCHMARK(BM_ToUpper_Eszett)->Name("ToUpper/txt/eszett");
 
 // ============================================================================
 // to_lower
@@ -178,7 +178,7 @@ static void BM_ToLower_ASCII_Upper(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAsciiMixed1k.size());
 }
-BENCHMARK(BM_ToLower_ASCII_Upper);
+BENCHMARK(BM_ToLower_ASCII_Upper)->Name("ToLower/txt/ascii_upper");
 
 static void BM_ToLower_CJK(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kCJK1k);
@@ -188,7 +188,7 @@ static void BM_ToLower_CJK(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kCJK1k.size());
 }
-BENCHMARK(BM_ToLower_CJK);
+BENCHMARK(BM_ToLower_CJK)->Name("ToLower/txt/cjk");
 
 // ============================================================================
 // to_title
@@ -202,7 +202,7 @@ static void BM_ToTitle_ASCII_Lower(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAsciiLower1k.size());
 }
-BENCHMARK(BM_ToTitle_ASCII_Lower);
+BENCHMARK(BM_ToTitle_ASCII_Lower)->Name("ToTitle/txt/ascii_lower");
 
 static void BM_ToTitle_Mixed(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kMixed1k);
@@ -212,7 +212,7 @@ static void BM_ToTitle_Mixed(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kMixed1k.size());
 }
-BENCHMARK(BM_ToTitle_Mixed);
+BENCHMARK(BM_ToTitle_Mixed)->Name("ToTitle/txt/mixed");
 
 // ============================================================================
 // case_fold
@@ -226,7 +226,7 @@ static void BM_CaseFold_ASCII_Lower(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAsciiLower1k.size());
 }
-BENCHMARK(BM_CaseFold_ASCII_Lower);
+BENCHMARK(BM_CaseFold_ASCII_Lower)->Name("CaseFold/txt/ascii_lower");
 
 static void BM_CaseFold_ASCII_Mixed(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kAsciiMixed1k);
@@ -236,7 +236,7 @@ static void BM_CaseFold_ASCII_Mixed(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kAsciiMixed1k.size());
 }
-BENCHMARK(BM_CaseFold_ASCII_Mixed);
+BENCHMARK(BM_CaseFold_ASCII_Mixed)->Name("CaseFold/txt/mixed");
 
 static void BM_CaseFold_Eszett(benchmark::State& state) {
     auto s = string::from_utf8_unchecked(kEszett100);
@@ -246,4 +246,4 @@ static void BM_CaseFold_Eszett(benchmark::State& state) {
     }
     state.SetBytesProcessed(state.iterations() * kEszett100.size());
 }
-BENCHMARK(BM_CaseFold_Eszett);
+BENCHMARK(BM_CaseFold_Eszett)->Name("CaseFold/txt/eszett");
