@@ -142,6 +142,13 @@ shape:
 Operation/backend/scenario/size
 ```
 
+A `naive` backend must implement the same operation end-to-end (like the
+scalar validator or byte-level ASCII case mapper). A memcpy is not a
+normalization baseline and a byte compare is not a normalized-equality
+baseline — such pairings measure different operations and render as
+meaningless speedup ratios. If no honest naive implementation exists, omit
+the baseline; txt-only series still track regressions.
+
 Examples:
 
 ```text
