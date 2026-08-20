@@ -10,272 +10,655 @@
         background-color: #fff;
         font-size: 16px;
       }
-      body {
-        color: #4a4a4a;
-        margin: 8px;
-        font-size: 1em;
-        font-weight: 400;
+      body { color: #4a4a4a; margin: 8px; font-size: 1em; font-weight: 400; }
+      header { margin-bottom: 8px; display: flex; flex-direction: column; gap: 6px; }
+      main { width: 100%; display: flex; flex-direction: column; max-width: 980px; }
+      a { color: #3273dc; cursor: pointer; text-decoration: none; }
+      a:hover { color: #000; }
+      .header-row { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+      .title { font-size: 1.5rem; font-weight: 600; margin: 0; }
+      .subtitle { color: #666; font-size: 0.85rem; max-width: 760px; margin: 0; }
+
+      /* --- view tabs --- */
+      .tabs { display: flex; gap: 4px; border-bottom: 2px solid #eee; margin-top: 4px; }
+      .tab {
+        padding: 6px 14px; font-size: 0.95rem; color: #555;
+        border-bottom: 2px solid transparent; margin-bottom: -2px;
       }
-      header {
-        margin-bottom: 8px;
-        display: flex;
-        flex-direction: column;
+      .tab:hover { color: #000; }
+      .tab.active { color: #1b51b5; font-weight: 600; border-bottom-color: #3273dc; }
+
+      .summary-bar {
+        display: flex; gap: 24px; flex-wrap: wrap;
+        padding: 10px 16px; background: #f5f7fa; border-radius: 8px; margin: 10px 0;
       }
-      main {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
+      .summary-stat { display: flex; flex-direction: column; }
+      .summary-stat .value { font-size: 1.05rem; font-weight: 600; }
+      .summary-stat .label { font-size: 0.75rem; color: #666; }
+
+      /* --- comparison cards --- */
+      .group-card { margin: 12px 0; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; }
+      .group-title { font-size: 1.15rem; font-weight: 600; margin: 0 0 2px 0; }
+      .group-meta { font-size: 0.78rem; color: #888; margin: 0 0 12px 0; }
+      .scenario-row { display: flex; align-items: flex-start; margin: 10px 0; gap: 12px; }
+      .scenario-label {
+        flex: 0 0 150px; font-size: 0.85rem; font-weight: 500;
+        padding-top: 2px; text-align: right; color: #444;
       }
-      a {
-        color: #3273dc;
-        cursor: pointer;
-        text-decoration: none;
+      .bars { flex: 1 1 auto; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+      .bar-row { display: flex; align-items: center; gap: 8px; }
+      .bar-tag {
+        flex: 0 0 44px; font-size: 0.68rem; color: #888; text-align: right;
+        text-transform: uppercase; letter-spacing: 0.03em;
       }
-      a:hover {
-        color: #000;
+      .bar-track { flex: 1 1 auto; position: relative; height: 18px; min-width: 0; }
+      .bar { height: 100%; border-radius: 3px; min-width: 2px; }
+      .bar.txt { background: #3273dc; }
+      .bar.naive { background: #c9d6f2; border: 1px solid #8aa8e8; box-sizing: border-box; }
+      .bar-value {
+        position: absolute; top: 0; height: 100%; display: flex; align-items: center;
+        font-size: 0.75rem; font-variant-numeric: tabular-nums; color: #555;
+        white-space: nowrap; padding-left: 6px;
       }
-      button {
-        color: #fff;
-        background-color: #3298dc;
-        border-color: transparent;
-        cursor: pointer;
-        text-align: center;
+      .ratio-badge {
+        flex: 0 0 120px; font-size: 0.75rem; font-weight: 600;
+        padding: 1px 8px; border-radius: 10px; text-align: center;
+        align-self: center; white-space: nowrap;
       }
-      button:hover {
-        background-color: #2793da;
-        flex: none;
+      .ratio-faster { background: #dafbe1; color: #1a7f37; }
+      .ratio-slower { background: #ffebe9; color: #cf222e; }
+      .ratio-parity { background: #f0f0f0; color: #666; }
+      .ratio-none { visibility: hidden; }
+      .hist-link { font-size: 0.72rem; align-self: center; white-space: nowrap; }
+
+      /* --- table view --- */
+      .table-controls { margin: 10px 0 4px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+      .table-controls input {
+        padding: 6px 10px; font-size: 0.9rem; border: 1px solid #ccc; border-radius: 6px;
+        width: 280px; outline: none;
       }
-      .spacer {
-        flex: auto;
+      .table-controls input:focus { border-color: #3273dc; }
+      .table-hint { font-size: 0.78rem; color: #888; }
+      table.bench { border-collapse: collapse; width: 100%; margin-top: 8px; }
+      table.bench th, table.bench td { padding: 6px 10px; font-size: 0.85rem; }
+      table.bench thead th {
+        position: sticky; top: 0; background: #f5f7fa; text-align: left;
+        border-bottom: 2px solid #ddd; cursor: pointer; user-select: none; white-space: nowrap;
       }
-      .small {
-        font-size: 0.75rem;
+      table.bench thead th .arrow { color: #3273dc; }
+      table.bench tbody tr:nth-child(even) { background: #fafbfd; }
+      table.bench tbody tr:hover { background: #eef4ff; }
+      table.bench td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+      table.bench td.dim { color: #aaa; }
+      table.bench td .ratio-badge { display: inline-block; flex: none; padding: 0 8px; }
+
+      /* --- history view --- */
+      .history-controls { margin: 10px 0; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+      .history-controls select {
+        padding: 6px 10px; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 6px;
+        max-width: 420px; background: #fff;
       }
-      footer {
-        margin-top: 16px;
-        display: flex;
-        align-items: center;
-      }
-      .header-label {
-        margin-right: 4px;
-      }
-      .benchmark-set {
-        margin: 8px 0;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-      }
-      .benchmark-title {
-        font-size: 3rem;
-        font-weight: 600;
-        word-break: break-word;
-        text-align: center;
-      }
-      .benchmark-graphs {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-around;
-        align-items: center;
-        flex-wrap: wrap;
-        width: 100%;
-      }
-      .benchmark-chart {
-        max-width: 1000px;
+      .history-stats { display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.82rem; color: #555; margin: 4px 0 8px; }
+      .history-stats b { font-variant-numeric: tabular-nums; }
+      .history-note { font-size: 0.75rem; color: #999; margin-top: 6px; }
+      .chart-box { border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px; background: #fff; }
+      .chart-box svg { width: 100%; height: auto; display: block; }
+      .grid-line { stroke: #eee; stroke-width: 1; }
+      .axis-label { font-size: 11px; fill: #999; }
+      .series-line { fill: none; stroke: #3273dc; stroke-width: 2; }
+      .series-dot { fill: #3273dc; }
+      .series-dot:hover { fill: #1b51b5; r: 5; }
+
+      footer { margin-top: 24px; padding: 12px 0; font-size: 0.75rem; color: #888; border-top: 1px solid #eee; }
+      @media (max-width: 720px) {
+        .scenario-label { flex-basis: 90px; font-size: 0.78rem; }
+        .ratio-badge { flex-basis: 86px; font-size: 0.68rem; }
       }
     </style>
-    <title>Benchmarks</title>
+    <title>texere benchmarks</title>
   </head>
-
   <body>
-    <header id="header">
-      <div class="header-item">
-        <strong class="header-label">Last Update:</strong>
-        <span id="last-update"></span>
+    <header>
+      <div class="header-row">
+        <h1 class="title">texere benchmarks</h1>
       </div>
-      <div class="header-item">
-        <strong class="header-label">Repository:</strong>
-        <a id="repository-link" rel="noopener"></a>
+      <p class="subtitle">
+        <b>Comparison</b>: latest run, txt vs naive baselines with speedup badges.
+        <b>Table</b>: every benchmark value, searchable and sortable.
+        <b>History</b>: one benchmark across commits.
+        Rows link into history; history points link to commits.
+      </p>
+      <nav class="tabs">
+        <a class="tab" id="tab-compare" href="#/">Comparison</a>
+        <a class="tab" id="tab-table" href="#/table">Table</a>
+        <a class="tab" id="tab-history" href="#/history">History</a>
+      </nav>
+      <div class="summary-bar">
+        <div class="summary-stat"><span class="value" id="latest-date">-</span><span class="label">latest run</span></div>
+        <div class="summary-stat"><span class="value" id="latest-commit">-</span><span class="label">commit</span></div>
+        <div class="summary-stat"><span class="value" id="total-groups">-</span><span class="label">operations</span></div>
+        <div class="summary-stat"><span class="value" id="total-benches">-</span><span class="label">benchmarks</span></div>
       </div>
     </header>
     <main id="main"></main>
     <footer>
-      <button id="dl-button">Download data as JSON</button>
-      <div class="spacer"></div>
-      <div class="small">Powered by <a rel="noopener" href="https://github.com/marketplace/actions/continuous-benchmark">github-action-benchmark</a></div>
+      Rendered from <a href="data.js">data.js</a> (raw JSON export) ·
+      <a rel="noopener" href="https://github.com/sentomk/texere">sentomk/texere</a> ·
+      trends live in the <a href="#/history">History</a> tab
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.2/dist/Chart.min.js"></script>
     <script src="data.js"></script>
-    <script id="main-script">
-      'use strict';
-      (function() {
-        // Colors from https://github.com/github/linguist/blob/master/lib/linguist/languages.yml
-        const toolColors = {
-          cargo: '#dea584',
-          go: '#00add8',
-          benchmarkjs: '#f1e05a',
-          benchmarkluau: '#000080',
-          pytest: '#3572a5',
-          googlecpp: '#f34b7d',
-          catch2: '#f34b7d',
-          julia: '#a270ba',
-          jmh: '#b07219',
-          benchmarkdotnet: '#178600',
-          customBiggerIsBetter: '#38ff38',
-          customSmallerIsBetter: '#ff3838',
-          _: '#333333'
-        };
+    <script>
+// == VIEW MODEL START ==
+// Pure data processing — no DOM access. Kept between the markers so the
+// logic can be extracted and unit-tested with node (tools/check_docs.py).
 
-        function init() {
-          function collectBenchesPerTestCase(entries) {
-            const map = new Map();
-            for (const entry of entries) {
-              const {commit, date, tool, benches} = entry;
-              for (const bench of benches) {
-                const result = { commit, date, tool, bench };
-                const arr = map.get(bench.name);
-                if (arr === undefined) {
-                  map.set(bench.name, [result]);
-                } else {
-                  arr.push(result);
-                }
-              }
-            }
-            return map;
-          }
+// "Validate/txt/ascii" -> { operation: "Validate", backend: "txt", scenario: "ascii" }
+// Names without slashes are legacy (pre-standardization) and reported as such.
+function parseBenchName(name) {
+  const parts = name.split('/');
+  if (parts.length < 2 || !parts[1]) {
+    return { operation: null, backend: null, scenario: name, legacy: true };
+  }
+  return {
+    operation: parts[0],
+    backend: parts[1],
+    scenario: parts.slice(2).join('/') || '(default)',
+    legacy: false,
+  };
+}
 
-          const data = window.BENCHMARK_DATA;
+const TOKEN_LABELS = {
+  ascii: 'ASCII', cjk: 'CJK', emoji: 'emoji', zwj: 'ZWJ', eszett: 'eszett (ß)',
+  nfc: 'NFC', nfd: 'NFD', nfkc: 'NFKC', nfkd: 'NFKD', utf8: 'UTF-8',
+  latin1: 'Latin-1', wstring: 'wstring',
+};
 
-          // Render header
-          document.getElementById('last-update').textContent = new Date(data.lastUpdate).toString();
-          const repoLink = document.getElementById('repository-link');
-          repoLink.href = data.repoUrl;
-          repoLink.textContent = data.repoUrl;
+function humanizeScenario(scenario) {
+  return scenario
+    .split('_')
+    .map(tok => TOKEN_LABELS[tok.toLowerCase()] || tok)
+    .join(' ');
+}
 
-          // Render footer
-          document.getElementById('dl-button').onclick = () => {
-            const dataUrl = 'data:,' + JSON.stringify(data, null, 2);
-            const a = document.createElement('a');
-            a.href = dataUrl;
-            a.download = 'benchmark_data.json';
-            a.click();
-          };
+function humanizeOperation(op) {
+  return op.replace(/\./g, ' · ');
+}
 
-          // Prepare data points for charts
-          return Object.keys(data.entries).map(name => ({
-            name,
-            dataSet: collectBenchesPerTestCase(data.entries[name]),
-          }));
+function formatValue(v) {
+  return v.toLocaleString('en-US', { maximumFractionDigits: v >= 100 ? 0 : 2 });
+}
+
+// Ratio of naive to txt on the same scenario: >1 means txt is faster.
+function ratioInfo(txtValue, naiveValue) {
+  const r = naiveValue / txtValue;
+  if (r >= 1.05) return { cls: 'ratio-faster', text: 'txt ' + r.toFixed(1) + '× faster', ratio: r };
+  if (r <= 0.95) return { cls: 'ratio-slower', text: 'txt ' + (1 / r).toFixed(1) + '× slower', ratio: r };
+  return { cls: 'ratio-parity', text: '≈ parity', ratio: r };
+}
+
+// Build the view model:
+//  - groups/rows describe the LATEST run only (stale series are excluded)
+//  - series covers ALL entries (history view); latestNames marks current ones
+function buildView(data) {
+  const allEntries = [];
+  for (const key of Object.keys(data.entries || {})) {
+    for (const entry of data.entries[key]) allEntries.push(entry);
+  }
+  if (allEntries.length === 0) return null;
+  allEntries.sort((a, b) => a.date - b.date);
+  const latest = allEntries[allEntries.length - 1];
+
+  const groups = new Map(); // operation -> { scenarios: Map(scenario -> backends), unit }
+  const legacy = [];
+  const latestNames = new Set();
+
+  for (const bench of latest.benches) {
+    const parsed = parseBenchName(bench.name);
+    latestNames.add(bench.name);
+    if (parsed.legacy) {
+      legacy.push({ name: bench.name, bench });
+      continue;
+    }
+    if (!groups.has(parsed.operation)) {
+      groups.set(parsed.operation, { scenarios: new Map(), unit: bench.unit });
+    }
+    const g = groups.get(parsed.operation);
+    if (!g.scenarios.has(parsed.scenario)) g.scenarios.set(parsed.scenario, {});
+    g.scenarios.get(parsed.scenario)[parsed.backend] = bench;
+  }
+
+  const groupList = [];
+  const rows = [];
+  for (const [operation, g] of groups) {
+    const scenarios = [];
+    let maxValue = 0;
+    let pairCount = 0;
+    for (const [scenario, backends] of g.scenarios) {
+      const txt = backends.txt || null;
+      const naive = backends.naive || null;
+      const others = Object.keys(backends).filter(b => b !== 'txt' && b !== 'naive')
+        .map(b => ({ backend: b, bench: backends[b] }));
+      const values = [txt, naive, ...others.map(o => o.bench)].filter(Boolean).map(b => b.value);
+      maxValue = Math.max(maxValue, ...values);
+      const ratio = txt && naive ? ratioInfo(txt.value, naive.value) : null;
+      if (ratio) pairCount++;
+      scenarios.push({ scenario, label: humanizeScenario(scenario), txt, naive, others, ratio });
+      rows.push({
+        operation, opLabel: humanizeOperation(operation),
+        scenario, scLabel: humanizeScenario(scenario),
+        txt, naive, others, ratio, unit: g.unit,
+      });
+    }
+    scenarios.sort((a, b) => {
+      const av = Math.max(...[a.txt, a.naive].filter(Boolean).map(x => x.value));
+      const bv = Math.max(...[b.txt, b.naive].filter(Boolean).map(x => x.value));
+      return bv - av;
+    });
+    groupList.push({
+      operation, label: humanizeOperation(operation), unit: g.unit,
+      scenarios, maxValue, pairCount,
+    });
+  }
+  // Groups with txt/naive pairs first (the comparisons people come for),
+  // then alphabetical.
+  groupList.sort((a, b) => (b.pairCount - a.pairCount) || a.operation.localeCompare(b.operation));
+
+  // History series across all entries, current names first, retired last.
+  const seriesMap = new Map(); // name -> [{date, value, unit, commitId, commitUrl}]
+  for (const entry of allEntries) {
+    for (const b of entry.benches) {
+      if (!seriesMap.has(b.name)) seriesMap.set(b.name, []);
+      seriesMap.get(b.name).push({
+        date: entry.date, value: b.value, unit: b.unit,
+        commitId: entry.commit.id, commitUrl: entry.commit.url,
+      });
+    }
+  }
+  const series = Array.from(seriesMap.entries())
+    .map(([name, points]) => ({ name, points, retired: !latestNames.has(name) }))
+    .sort((a, b) => (a.retired - b.retired) || a.name.localeCompare(b.name));
+
+  return {
+    meta: {
+      date: latest.date,
+      commit: latest.commit,
+      groupCount: groupList.length,
+      benchCount: latest.benches.length,
+      legacyCount: legacy.length,
+    },
+    groups: groupList,
+    rows,
+    legacy,
+    series,
+    latestNames,
+  };
+}
+// == VIEW MODEL END ==
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { parseBenchName, buildView, ratioInfo, humanizeScenario };
+}
+
+if (typeof document !== 'undefined') (function () {
+  const data = window.BENCHMARK_DATA;
+  const main = document.getElementById('main');
+  const view = data && buildView(data);
+  if (!view) {
+    main.textContent = 'No benchmark data found. Run benchmarks first.';
+    return;
+  }
+
+  document.getElementById('latest-date').textContent = new Date(view.meta.date).toLocaleDateString();
+  const commitEl = document.getElementById('latest-commit');
+  commitEl.textContent = '';
+  const link = document.createElement('a');
+  link.href = view.meta.commit.url;
+  link.textContent = String(view.meta.commit.id).slice(0, 8);
+  commitEl.appendChild(link);
+  document.getElementById('total-groups').textContent = view.meta.groupCount;
+  document.getElementById('total-benches').textContent = view.meta.benchCount;
+
+  function historyHash(name) { return '#/history/' + encodeURIComponent(name); }
+
+  function barRow(backend, bench, maxValue, unit) {
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    const tag = document.createElement('span');
+    tag.className = 'bar-tag';
+    tag.textContent = backend;
+    row.appendChild(tag);
+    const track = document.createElement('div');
+    track.className = 'bar-track';
+    const bar = document.createElement('div');
+    bar.className = 'bar ' + backend;
+    bar.style.width = Math.max((bench.value / maxValue) * 100, 0.5) + '%';
+    bar.title = bench.name + '\n' + formatValue(bench.value) + ' ' + unit;
+    bar.style.cursor = 'pointer';
+    bar.addEventListener('click', () => { location.hash = historyHash(bench.name); });
+    track.appendChild(bar);
+    const val = document.createElement('span');
+    val.className = 'bar-value';
+    val.style.left = 'calc(' + Math.max((bench.value / maxValue) * 100, 0.5) + '% + 4px)';
+    val.textContent = formatValue(bench.value);
+    track.appendChild(val);
+    row.appendChild(track);
+    return row;
+  }
+
+  // ---------- Comparison view ----------
+
+  function renderCompare() {
+    for (const group of view.groups) {
+      const card = document.createElement('div');
+      card.className = 'group-card';
+      main.appendChild(card);
+
+      const title = document.createElement('h2');
+      title.className = 'group-title';
+      title.textContent = group.label;
+      card.appendChild(title);
+
+      const meta = document.createElement('div');
+      meta.className = 'group-meta';
+      meta.textContent = 'unit: ' + group.unit + ' (lower is better)' +
+        (group.pairCount ? ' · ' + group.pairCount + ' txt/naive comparison' + (group.pairCount > 1 ? 's' : '') : '');
+      card.appendChild(meta);
+
+      for (const sc of group.scenarios) {
+        const row = document.createElement('div');
+        row.className = 'scenario-row';
+        const label = document.createElement('div');
+        label.className = 'scenario-label';
+        label.textContent = sc.label;
+        row.appendChild(label);
+
+        const bars = document.createElement('div');
+        bars.className = 'bars';
+        if (sc.txt) bars.appendChild(barRow('txt', sc.txt, group.maxValue, group.unit));
+        if (sc.naive) bars.appendChild(barRow('naive', sc.naive, group.maxValue, group.unit));
+        for (const o of sc.others) bars.appendChild(barRow(o.backend, o.bench, group.maxValue, group.unit));
+        row.appendChild(bars);
+
+        const badge = document.createElement('span');
+        if (sc.ratio) {
+          badge.className = 'ratio-badge ' + sc.ratio.cls;
+          badge.textContent = sc.ratio.text;
+        } else {
+          badge.className = 'ratio-badge ratio-none';
+        }
+        row.appendChild(badge);
+
+        const anyBench = sc.txt || sc.naive || (sc.others[0] && sc.others[0].bench);
+        if (anyBench) {
+          const hist = document.createElement('a');
+          hist.className = 'hist-link';
+          hist.href = historyHash(anyBench.name);
+          hist.textContent = 'history →';
+          row.appendChild(hist);
+        }
+        card.appendChild(row);
+      }
+    }
+
+    if (view.legacy.length > 0) {
+      const card = document.createElement('div');
+      card.className = 'group-card';
+      main.appendChild(card);
+      const title = document.createElement('h2');
+      title.className = 'group-title';
+      title.textContent = 'Legacy names (pre-standardization)';
+      card.appendChild(title);
+      for (const item of view.legacy) {
+        const div = document.createElement('div');
+        div.style.cssText = 'font-size:0.85rem;padding:2px 0;font-variant-numeric:tabular-nums;';
+        div.textContent = item.name + ' — ' + formatValue(item.bench.value) + ' ' + item.bench.unit;
+        card.appendChild(div);
+      }
+    }
+  }
+
+  // ---------- Table view ----------
+
+  const tableState = { query: '', sortKey: 'op', sortDir: 1 };
+
+  function sortRows(rows) {
+    const keyFn = {
+      op: r => r.opLabel + '|' + r.scLabel,
+      scenario: r => r.scLabel,
+      txt: r => (r.txt ? r.txt.value : Infinity),
+      naive: r => (r.naive ? r.naive.value : Infinity),
+      ratio: r => (r.ratio ? r.ratio.ratio : -1),
+    }[tableState.sortKey];
+    return [...rows].sort((a, b) => {
+      const va = keyFn(a), vb = keyFn(b);
+      return (va < vb ? -1 : va > vb ? 1 : 0) * tableState.sortDir;
+    });
+  }
+
+  function renderTable() {
+    const controls = document.createElement('div');
+    controls.className = 'table-controls';
+    const input = document.createElement('input');
+    input.placeholder = 'Filter by name — e.g. validate, cjk, utf8…';
+    input.value = tableState.query;
+    const hint = document.createElement('span');
+    hint.className = 'table-hint';
+    controls.appendChild(input);
+    controls.appendChild(hint);
+    main.appendChild(controls);
+
+    const tbody = document.createElement('tbody');
+
+    function redraw() {
+      const q = tableState.query.trim().toLowerCase();
+      const filtered = view.rows.filter(r =>
+        !q || (r.operation + '/' + (r.txt ? 'txt' : '') + '|' + (r.naive ? 'naive' : '') + '/' + r.scenario)
+          .toLowerCase().includes(q));
+      hint.textContent = filtered.length + ' of ' + view.rows.length + ' scenarios — click a column to sort';
+      tbody.innerHTML = '';
+      for (const r of sortRows(filtered)) {
+        const tr = document.createElement('tr');
+        const anyBench = r.txt || r.naive || (r.others[0] && r.others[0].bench);
+
+        const tdOp = document.createElement('td');
+        tdOp.textContent = r.opLabel;
+        tr.appendChild(tdOp);
+
+        const tdSc = document.createElement('td');
+        tdSc.textContent = r.scLabel;
+        tr.appendChild(tdSc);
+
+        for (const bench of [r.txt, r.naive]) {
+          const td = document.createElement('td');
+          td.className = 'num' + (bench ? '' : ' dim');
+          td.textContent = bench ? formatValue(bench.value) : '—';
+          tr.appendChild(td);
         }
 
-        function renderAllChars(dataSets) {
-
-          function renderGraph(parent, name, dataset) {
-            const canvas = document.createElement('canvas');
-            canvas.className = 'benchmark-chart';
-            parent.appendChild(canvas);
-
-            const color = toolColors[dataset.length > 0 ? dataset[0].tool : '_'];
-            const data = {
-              labels: dataset.map(d => d.commit.id.slice(0, 7)),
-              datasets: [
-                {
-                  label: name,
-                  data: dataset.map(d => d.bench.value),
-                  borderColor: color,
-                  backgroundColor: color + '60', // Add alpha for #rrggbbaa
-                }
-              ],
-            };
-            const options = {
-              scales: {
-                xAxes: [
-                  {
-                    scaleLabel: {
-                      display: true,
-                      labelString: 'commit',
-                    },
-                  }
-                ],
-                yAxes: [
-                  {
-                    scaleLabel: {
-                      display: true,
-                      labelString: dataset.length > 0 ? dataset[0].bench.unit : '',
-                    },
-                    ticks: {
-                      beginAtZero: true,
-                    }
-                  }
-                ],
-              },
-              tooltips: {
-                callbacks: {
-                  afterTitle: items => {
-                    const {index} = items[0];
-                    const data = dataset[index];
-                    return '\n' + data.commit.message + '\n\n' + data.commit.timestamp + ' committed by @' + data.commit.committer.username + '\n';
-                  },
-                  label: item => {
-                    let label = item.value;
-                    const { range, unit } = dataset[item.index].bench;
-                    label += ' ' + unit;
-                    if (range) {
-                      label += ' (' + range + ')';
-                    }
-                    return label;
-                  },
-                  afterLabel: item => {
-                    const { extra } = dataset[item.index].bench;
-                    return extra ? '\n' + extra : '';
-                  }
-                }
-              },
-              onClick: (_mouseEvent, activeElems) => {
-                if (activeElems.length === 0) {
-                  return;
-                }
-                // XXX: Undocumented. How can we know the index?
-                const index = activeElems[0]._index;
-                const url = dataset[index].commit.url;
-                window.open(url, '_blank');
-              },
-            };
-
-            new Chart(canvas, {
-              type: 'line',
-              data,
-              options,
-            });
-          }
-
-          function renderBenchSet(name, benchSet, main) {
-            const setElem = document.createElement('div');
-            setElem.className = 'benchmark-set';
-            main.appendChild(setElem);
-
-            const nameElem = document.createElement('h1');
-            nameElem.className = 'benchmark-title';
-            nameElem.textContent = name;
-            setElem.appendChild(nameElem);
-
-            const graphsElem = document.createElement('div');
-            graphsElem.className = 'benchmark-graphs';
-            setElem.appendChild(graphsElem);
-
-            for (const [benchName, benches] of benchSet.entries()) {
-              renderGraph(graphsElem, benchName, benches)
-            }
-          }
-
-          const main = document.getElementById('main');
-          for (const {name, dataSet} of dataSets) {
-            renderBenchSet(name, dataSet, main);
-          }
+        const tdRatio = document.createElement('td');
+        if (r.ratio) {
+          const badge = document.createElement('span');
+          badge.className = 'ratio-badge ' + r.ratio.cls;
+          badge.textContent = r.ratio.text;
+          tdRatio.appendChild(badge);
         }
+        tr.appendChild(tdRatio);
 
-        renderAllChars(init()); // Start
-      })();
+        const tdHist = document.createElement('td');
+        if (anyBench) {
+          const a = document.createElement('a');
+          a.href = historyHash(anyBench.name);
+          a.textContent = 'history →';
+          a.className = 'hist-link';
+          tdHist.appendChild(a);
+        }
+        tr.appendChild(tdHist);
+        tbody.appendChild(tr);
+      }
+    }
+
+    const table = document.createElement('table');
+    table.className = 'bench';
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    const cols = [
+      ['op', 'Operation'], ['scenario', 'Scenario'],
+      ['txt', 'txt (latest)'], ['naive', 'naive (latest)'],
+      ['ratio', 'vs naive'], [null, ''],
+    ];
+    for (const [key, label] of cols) {
+      const th = document.createElement('th');
+      th.textContent = label + ' ';
+      const arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      if (key === tableState.sortKey) arrow.textContent = tableState.sortDir > 0 ? '▲' : '▼';
+      th.appendChild(arrow);
+      if (key) {
+        th.addEventListener('click', () => {
+          if (tableState.sortKey === key) tableState.sortDir *= -1;
+          else { tableState.sortKey = key; tableState.sortDir = 1; }
+          headRow.querySelectorAll('.arrow').forEach(a => a.textContent = '');
+          arrow.textContent = tableState.sortDir > 0 ? '▲' : '▼';
+          redraw();
+        });
+      }
+      headRow.appendChild(th);
+    }
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    main.appendChild(table);
+
+    input.addEventListener('input', () => { tableState.query = input.value; redraw(); });
+    redraw();
+  }
+
+  // ---------- History view ----------
+
+  function svgEl(tag, attrs, parent) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(el);
+    return el;
+  }
+
+  function renderHistory(selectedName) {
+    const controls = document.createElement('div');
+    controls.className = 'history-controls';
+    const select = document.createElement('select');
+    const mkOptgroup = (label, items) => {
+      if (items.length === 0) return;
+      const og = document.createElement('optgroup');
+      og.label = label;
+      for (const s of items) {
+        const opt = document.createElement('option');
+        opt.value = s.name;
+        opt.textContent = s.name + (s.retired ? ' (retired)' : '');
+        if (s.name === selectedName) opt.selected = true;
+        og.appendChild(opt);
+      }
+      select.appendChild(og);
+    };
+    mkOptgroup('current', view.series.filter(s => !s.retired));
+    mkOptgroup('retired', view.series.filter(s => s.retired));
+    controls.appendChild(select);
+    main.appendChild(controls);
+
+    const chartBox = document.createElement('div');
+    chartBox.className = 'chart-box';
+    main.appendChild(chartBox);
+    const stats = document.createElement('div');
+    stats.className = 'history-stats';
+    main.insertBefore(stats, chartBox);
+    const note = document.createElement('div');
+    note.className = 'history-note';
+    note.textContent = 'GitHub-hosted runners vary ~2–3× between runs; read trends directionally. Click a point to open its commit.';
+    main.appendChild(note);
+
+    function draw(name) {
+      const s = view.series.find(x => x.name === name);
+      chartBox.innerHTML = '';
+      stats.innerHTML = '';
+      if (!s || s.points.length === 0) return;
+
+      const W = 920, H = 280, PL = 64, PR = 16, PT = 16, PB = 40;
+      const svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H }, chartBox);
+      const values = s.points.map(p => p.value);
+      let min = Math.min(...values), max = Math.max(...values);
+      if (min === max) { min = min * 0.9; max = max * 1.1 + 1; }
+      const pad = (max - min) * 0.1;
+      min = Math.max(0, min - pad); max = max + pad;
+
+      const x = i => PL + (s.points.length === 1 ? (W - PL - PR) / 2 : (i / (s.points.length - 1)) * (W - PL - PR));
+      const y = v => PT + (1 - (v - min) / (max - min)) * (H - PT - PB);
+
+      for (let g = 0; g <= 4; g++) {
+        const gv = min + ((max - min) * g) / 4;
+        const gy = y(gv);
+        svgEl('line', { x1: PL, y1: gy, x2: W - PR, y2: gy, class: 'grid-line' }, svg);
+        const lbl = svgEl('text', { x: PL - 6, y: gy + 4, 'text-anchor': 'end', class: 'axis-label' }, svg);
+        lbl.textContent = formatValue(gv);
+      }
+      const firstDate = svgEl('text', { x: PL, y: H - 12, class: 'axis-label' }, svg);
+      firstDate.textContent = new Date(s.points[0].date).toLocaleDateString();
+      const lastDate = svgEl('text', { x: W - PR, y: H - 12, 'text-anchor': 'end', class: 'axis-label' }, svg);
+      lastDate.textContent = new Date(s.points[s.points.length - 1].date).toLocaleDateString();
+      const unitLbl = svgEl('text', { x: PL, y: PT - 2, class: 'axis-label' }, svg);
+      unitLbl.textContent = s.points[0].unit;
+
+      const path = s.points.map((p, i) => (i === 0 ? 'M' : 'L') + x(i).toFixed(1) + ',' + y(p.value).toFixed(1)).join(' ');
+      svgEl('path', { d: path, class: 'series-line' }, svg);
+
+      s.points.forEach((p, i) => {
+        const a = svgEl('a', { href: p.commitUrl }, svg);
+        const c = svgEl('circle', { cx: x(i), cy: y(p.value), r: 4, class: 'series-dot' }, a);
+        const t = svgEl('title', {}, c);
+        t.textContent = new Date(p.date).toLocaleString() + '\n' +
+          formatValue(p.value) + ' ' + p.unit + '\n' + String(p.commitId).slice(0, 8);
+      });
+
+      const latestPt = s.points[s.points.length - 1];
+      const first = values[0], last = values[values.length - 1];
+      const delta = ((last - first) / first * 100);
+      stats.innerHTML =
+        '<span>points: <b>' + values.length + '</b></span>' +
+        '<span>latest: <b>' + formatValue(last) + ' ' + s.points[0].unit + '</b></span>' +
+        '<span>min: <b>' + formatValue(Math.min(...values)) + '</b></span>' +
+        '<span>max: <b>' + formatValue(Math.max(...values)) + '</b></span>' +
+        '<span>first→latest: <b>' + (delta >= 0 ? '+' : '') + delta.toFixed(1) + '%</b></span>' +
+        '<span style="color:#999">' + name + (s.retired ? ' (retired — no longer measured)' : '') + '</span>';
+      void latestPt;
+    }
+
+    select.addEventListener('change', () => { location.hash = historyHash(select.value); });
+    draw(selectedName || (view.series[0] && view.series[0].name));
+  }
+
+  // ---------- Router ----------
+
+  function route() {
+    const hash = location.hash || '#/';
+    main.innerHTML = '';
+    for (const id of ['tab-compare', 'tab-table', 'tab-history']) {
+      document.getElementById(id).classList.remove('active');
+    }
+    if (hash.startsWith('#/table')) {
+      document.getElementById('tab-table').classList.add('active');
+      renderTable();
+    } else if (hash.startsWith('#/history')) {
+      document.getElementById('tab-history').classList.add('active');
+      const name = decodeURIComponent(hash.slice('#/history/'.length));
+      renderHistory(hash.startsWith('#/history/') ? name : null);
+    } else {
+      document.getElementById('tab-compare').classList.add('active');
+      renderCompare();
+    }
+  }
+
+  window.addEventListener('hashchange', route);
+  route();
+})();
     </script>
   </body>
 </html>
