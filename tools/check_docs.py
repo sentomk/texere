@@ -110,6 +110,15 @@ check('Validate grouped with 2 pairs', validate && validate.pairCount === 2 && v
 check('paired groups sort first', view.groups[0].operation === 'Validate');
 const ascii = validate && validate.scenarios.find(s => s.scenario === 'ascii');
 check('ascii ratio 6x faster', ascii && ascii.ratio.cls === 'ratio-faster' && ascii.ratio.text === 'txt 6.0× faster');
+check('table rows: one per scenario', view.rows.length === 3);
+const vRow = view.rows.find(r => r.operation === 'Validate' && r.scenario === 'ascii');
+check('table row carries txt/naive/ratio', !!(vRow && vRow.txt && vRow.naive && vRow.ratio));
+check('history series: 5 current + 1 retired', view.series.length === 6 &&
+  view.series.filter(s => s.retired).length === 1);
+check('stale name retired, absent from latest', view.series.find(s => s.name === 'BM_Stale_Legacy').retired === true &&
+  !view.latestNames.has('BM_Stale_Legacy'));
+check('current names first', view.series[0].retired === false);
+check('series points date-sorted', view.series.every(s => s.points.every((p, i, a) => i === 0 || a[i-1].date <= p.date)));
 
 if (failures) process.exit(1);
 console.log('dashboard logic test: ok');
