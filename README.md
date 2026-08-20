@@ -50,13 +50,12 @@ One emoji family: 25 bytes, 11 code points, **1 grapheme**. Build with `-DTEXERE
 Benchmark results are tracked continuously via [github-action-benchmark](https://github.com/benchmark-action/github-action-benchmark) and visualized on the project's GitHub Pages:
 
 <p align="center">
-  <a href="https://sentomk.github.io/texere/dev/bench/comparison.html" style="font-size:1.2em; font-weight:bold; color:#0366d6;">
+  <a href="https://sentomk.github.io/texere/dev/bench/" style="font-size:1.2em; font-weight:bold; color:#0366d6;">
     Benchmark Dashboard &rarr;
   </a>
 </p>
 
-- **Latest-run comparison** (landing page) — benchmarks grouped by operation, `txt` vs naive baselines side by side with speedup badges
-- **[Time series](https://sentomk.github.io/texere/dev/bench/)** — per-commit history with commit tooltips and raw JSON export
+One page, three views: **Comparison** (latest run, txt vs naive speedup badges), **Table** (every value, searchable and sortable), and **History** (per-commit trends per benchmark, with commit links). Raw data: `data.js` JSON export, linked in the footer.
 
 > **Note**: After enabling GitHub Pages (Settings → Pages → `gh-pages` branch, root directory), the dashboard will be available at the link above after the first CI run on `main`.
 

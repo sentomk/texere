@@ -240,6 +240,27 @@ jobs:
           comment-on-alert: true
           fail-on-alert: false
 
+      # The action regenerates its default per-benchmark index.html on every
+      # run. That page duplicates our History view with worse UX, so restore
+      # the unified dashboard as the index right after the action pushes.
+      - name: Restore unified dashboard as the index page
+        run: |
+          cp docs/comparison.html /tmp/unified_dash.html
+          git fetch origin gh-pages
+          git checkout gh-pages
+          git pull --rebase origin gh-pages
+          cp /tmp/unified_dash.html dev/bench/index.html
+          cp /tmp/unified_dash.html dev/bench/comparison.html
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dev/bench/index.html dev/bench/comparison.html
+          if git diff --cached --quiet; then
+            echo "index already unified"
+          else
+            git commit -m "Keep unified dashboard at dev/bench index"
+            git push origin gh-pages
+          fi
+
   # comparison.html reads data.js at view time, so it deploys when its own
   # source changes — not on every benchmark run. This keeps docs/* dashboard
   # work shippable even though such merges skip the benchmark job.
@@ -261,9 +282,10 @@ jobs:
           git checkout gh-pages
           git pull --rebase origin gh-pages
           cp /tmp/comparison.html dev/bench/comparison.html
+          cp /tmp/comparison.html dev/bench/index.html
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dev/bench/comparison.html
+          git add dev/bench/comparison.html dev/bench/index.html
           if git diff --cached --quiet; then
             echo "comparison.html unchanged — skipping commit"
           else
