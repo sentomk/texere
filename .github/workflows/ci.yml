@@ -243,9 +243,16 @@ jobs:
       # The action regenerates its default per-benchmark index.html on every
       # run. That page duplicates our History view with worse UX, so restore
       # the unified dashboard as the index right after the action pushes.
+      #
+      # The HTML MUST come from fresh origin/main, not from the checkout:
+      # this job can outlive other pushes (e.g. a later docs merge deploys a
+      # newer dashboard while we are still benchmarking), and copying the
+      # stale checkout over gh-pages would silently revert that newer deploy.
+      # pull --rebase alone cannot stop stale content from overwriting newer.
       - name: Restore unified dashboard as the index page
         run: |
-          cp docs/comparison.html /tmp/unified_dash.html
+          git fetch origin main
+          git show origin/main:docs/comparison.html > /tmp/unified_dash.html
           git fetch origin gh-pages
           git checkout gh-pages
           git pull --rebase origin gh-pages
