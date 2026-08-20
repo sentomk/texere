@@ -150,6 +150,24 @@ jobs:
           set -euo pipefail
           PERF_RE='^(src/|include/|benchmarks/|cmake/)|^CMakeLists\.txt$|^CMakePresets\.json$|^\.github/workflows/ci\.yml$'
 
+          BASE="$BEFORE"
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            BASE="HEAD~1"
+          fi
+          CHANGED="$(git diff --name-only "$BASE" HEAD)"
+          echo "changed files ($BASE..HEAD):" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "$CHANGED" | sed 's/^/- /' >> "$GITHUB_STEP_SUMMARY"
+
+          # The comparison dashboard deploys independently of benchmark runs:
+          # it reads data.js at view time, so it only needs a deploy when its
+          # own source changes. Computed BEFORE the marker early-exits below:
+          # [skip bench] must never suppress a dashboard deploy.
+          if printf '%s\n' "$CHANGED" | grep -qx 'docs/comparison.html'; then
+            echo "dashboard=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "dashboard=false" >> "$GITHUB_OUTPUT"
+          fi
+
           if printf '%s' "$MSG" | grep -qF '[bench]'; then
             echo "reason=marker '[bench]'" >> "$GITHUB_STEP_SUMMARY"
             echo "bench=true" >> "$GITHUB_OUTPUT"
@@ -161,29 +179,12 @@ jobs:
             exit 0
           fi
 
-          BASE="$BEFORE"
-          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
-            BASE="HEAD~1"
-          fi
-          CHANGED="$(git diff --name-only "$BASE" HEAD)"
-          echo "changed files ($BASE..HEAD):" >> "$GITHUB_STEP_SUMMARY"
-          printf '%s\n' "$CHANGED" | sed 's/^/- /' >> "$GITHUB_STEP_SUMMARY"
-
           if printf '%s\n' "$CHANGED" | grep -qE "$PERF_RE"; then
             echo "reason=perf-relevant path changed" >> "$GITHUB_STEP_SUMMARY"
             echo "bench=true" >> "$GITHUB_OUTPUT"
           else
             echo "reason=no perf-relevant path changed" >> "$GITHUB_STEP_SUMMARY"
             echo "bench=false" >> "$GITHUB_OUTPUT"
-          fi
-
-          # The comparison dashboard deploys independently of benchmark runs:
-          # it reads data.js at view time, so it only needs a deploy when its
-          # own source changes. Not affected by the [skip bench] marker.
-          if printf '%s\n' "$CHANGED" | grep -qx 'docs/comparison.html'; then
-            echo "dashboard=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "dashboard=false" >> "$GITHUB_OUTPUT"
           fi
 
   benchmark:
