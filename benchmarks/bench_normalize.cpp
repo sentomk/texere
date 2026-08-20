@@ -190,39 +190,9 @@ static void BM_EqualsNormalized_NotEqual(benchmark::State& state) {
 }
 BENCHMARK(BM_EqualsNormalized_NotEqual)->Name("EqualsNormalized/txt/not_equal");
 
-// ============================================================================
-// Naive baselines — no-op pass-through for normalized(), byte-level for equals
-// ============================================================================
-
-static void BM_Naive_Normalize_NFC_ASCII(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kAscii1k);
-    for (auto _ : state) {
-        // Naive "normalization": return input as-is
-        auto out = s.to_std_string();
-        benchmark::DoNotOptimize(out);
-    }
-    state.SetBytesProcessed(state.iterations() * kAscii1k.size());
-}
-BENCHMARK(BM_Naive_Normalize_NFC_ASCII)->Name("Normalize.NFC/naive/ascii");
-
-static void BM_Naive_Normalize_NFC_NFD_to_NFC(benchmark::State& state) {
-    auto s = string::from_utf8_unchecked(kNFD1000);
-    for (auto _ : state) {
-        auto out = s.to_std_string();
-        benchmark::DoNotOptimize(out);
-    }
-    state.SetBytesProcessed(state.iterations() * kNFD1000.size());
-}
-BENCHMARK(BM_Naive_Normalize_NFC_NFD_to_NFC)->Name("Normalize.NFC/naive/nfd_input");
-
-static void BM_Naive_EqualsNormalized_Equal_NFC(benchmark::State& state) {
-    auto a = string::from_utf8_unchecked(kNFC1000);
-    auto b = string::from_utf8_unchecked(kNFC1000);
-    for (auto _ : state) {
-        // Naive: byte-level comparison
-        auto eq = (a.to_std_string_view() == b.to_std_string_view());
-        benchmark::DoNotOptimize(eq);
-    }
-    state.SetBytesProcessed(state.iterations() * kNFC1000.size());
-}
-BENCHMARK(BM_Naive_EqualsNormalized_Equal_NFC)->Name("EqualsNormalized/naive/equal_nfc");
+// NOTE: no naive baselines here. A naive baseline must implement the same
+// operation end-to-end (like the scalar validators in bench_validate_utf8.cpp);
+// a memcpy is not "naive normalization" and a byte compare is not "naive
+// normalized equality" (it answers wrong for canonically-equal inputs).
+// A correct naive normalizer would just re-derive uni-algo, so the txt
+// series above stand alone as regression trackers.
