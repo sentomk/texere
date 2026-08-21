@@ -24,7 +24,8 @@
 - **Opaque Index**: obtainable only from iterators, preventing confusion between byte offsets and grapheme indices
 - **Mutation API**: `operator+` / `append` / `insert` / `erase` / `replace` — positions via opaque `Index`, counts in grapheme clusters; an `Index` falling inside a cluster is a reported error (`errc::not_grapheme_boundary`), never silent corruption
 - **Hashable**: `std::hash` specializations for `txt::string` and `txt::string_view` — usable as `unordered_map` keys
-- **Unicode 15.1**: grapheme cluster boundaries, case mapping, and normalization all based on Unicode 15.1
+- **Display width**: `display_width()` — terminal-cell width per UAX #11 + UTS #51 emoji rules, the first texere-native algorithm (neither backend provides EAW). Explicit `east_asian_context` policy for ambiguous characters; test vectors aligned with Rust `unicode-width`'s emoji suite
+- **Unicode 15.1**: grapheme cluster boundaries, case mapping, normalization, and width tables all based on Unicode 15.1
 
 ---
 

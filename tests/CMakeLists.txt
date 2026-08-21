@@ -31,6 +31,7 @@ add_executable(texere_tests
     test_convert.cpp
     test_boundary.cpp
     test_txt_wc.cpp
+    test_width.cpp
 )
 
 target_link_libraries(texere_tests PRIVATE
