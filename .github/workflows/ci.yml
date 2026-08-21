@@ -151,8 +151,12 @@ jobs:
           PERF_RE='^(src/|include/|benchmarks/|cmake/)|^CMakeLists\.txt$|^CMakePresets\.json$|^\.github/workflows/ci\.yml$'
 
           BASE="$BEFORE"
-          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
-            BASE="HEAD~1"
+          # Force-pushed PR heads orphan their previous tip: `before` can
+          # point at an unreachable object (git diff then dies with
+          # "bad object").  Fall back to the merge base with the default
+          # branch — the PR's own changes, which is what we want to gate.
+          if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            BASE="$(git merge-base HEAD origin/main)"
           fi
           CHANGED="$(git diff --name-only "$BASE" HEAD)"
           echo "changed files ($BASE..HEAD):" >> "$GITHUB_STEP_SUMMARY"
