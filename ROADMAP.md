@@ -18,8 +18,8 @@ adoption of the library. Each milestone lists **deliverables** and an
 | `_ts` literal: validated, lossy semantics (compile-time rejection impossible — N3599 never adopted; see design_rationale §Q2) | ✅ #11 |
 | Mutation API (`+`/`+=`/`append`/`insert`/`erase`/`replace`), `find`/`substr`, `std::hash` | ✅ #12 |
 | First tool: `txt wc` (lines/graphemes/codepoints/bytes, 267 tests) | ✅ #13 |
-| Width module (East Asian Width + emoji rules) | ⬅️ next |
-| Algorithm layer (`trim`/`split`/`join`/…) | planned |
+| Width module (`display_width`: EAW + UTS #51 emoji rules, unicode-width-aligned) | ✅ #28 |
+| Algorithm layer (`trim`/`split`/`join`/…) | ⬅️ next |
 | Packaging (vcpkg/conan), first tagged release | planned |
 
 ---

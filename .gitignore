@@ -60,3 +60,7 @@ out/
 
 # Agent/session state (pi, etc.)
 .pi/
+
+# UCD data cache for gen/ (re-fetch with --download)
+gen/ucd/
+

@@ -188,7 +188,43 @@ When uni-algo is enabled, the effective Unicode version follows uni-algo's relea
 
 ---
 
-## 7. Relationship to Other Libraries
+## 7. Display Width (the first texere-native algorithm)
+
+`txt::display_width()` measures terminal cells per UAX #11 + UTS #51. Neither
+backend provides East Asian Width, so the tables and rules are ours:
+
+- **Tables**: `gen/gen_width_tables.py` consumes the UCD (EAW, emoji-data,
+  emoji-variation-sequences, DerivedCoreProperties, DerivedGeneralCategory)
+  and emits `src/width_tables.hpp` — a two-stage lookup in uni-algo's layout
+  (8,704 128-cp blocks deduplicate to 178, ~31 KiB). Generated output is
+  committed; building never needs Python.
+- **Value byte**: base class (zero/narrow/wide/ambiguous) + UTS #51 flags
+  (Emoji_Presentation, Extended_Pictographic, Emoji_Modifier_Base, VS16/VS15
+  sequence starters, ambiguous-letter marker).
+- **Runtime**: a right-to-left state-machine fold ported from Rust
+  `unicode-width` v0.2.0's emoji subset (presentation/text sequences, ZWJ
+  families, modifiers, keycaps, RI flags, subdivision tags, CR LF). The fold
+  runs over the whole string — deliberately NOT a per-cluster sum, because
+  ZWJ state can span cluster boundaries (RI pairs are not ExtPict, so GB11
+  does not join them). UTF-8 is visited backwards (self-synchronizing), so
+  the string API is single-pass with zero allocations.
+- **Policy is explicit**: `east_asian_context::narrow/wide` resolves EAW=A;
+  there is no hidden default. EAW=A letters/modifier symbols stay narrow
+  even in a wide context (unicode-width rule), and FE0E is inert in wide
+  contexts (their CJK tables carry no VS15 state).
+- **Verification**: doctests port unicode-width's emoji test vectors
+  (test_emoji_presentation / test_text_presentation / test_emoji_modifier /
+  test_emoji_zwj), plus a differential harness (6,000+ generated strings,
+  both contexts) run against a Python port of unicode-width's exact state
+  machine during development.
+- **Known divergences** (documented in width.hpp): script-specific ligatures
+  (Arabic/Hebrew/Khmer/Tifinagh/…), GCB=Prepend marks, Grapheme_Extend
+  spacing marks (U+09BE) — they need Joining_Group/Grapheme_Cluster_Break
+  tables and are tracked for a later generator extension.
+
+---
+
+## 8. Relationship to Other Libraries
 
 | Library | Relationship |
 |---------|--------------|
@@ -200,7 +236,7 @@ When uni-algo is enabled, the effective Unicode version follows uni-algo's relea
 
 ---
 
-## 8. Future Plans (M1+)
+## 9. Future Plans (M1+)
 
 - `txt::rope`: rope data structure for large text
 - `txt::regex`: Unicode-aware regular expressions
