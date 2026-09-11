@@ -26,8 +26,19 @@ endif()
 # ============================================================================
 # Options
 # ============================================================================
-option(TEXERE_BUILD_TESTS      "Build unit tests"   ON)
-option(TEXERE_BUILD_TOOLS      "Build the txt command-line tools" ON)
+# texere is built two ways: as its own project by its maintainers, and as a
+# subproject by consumers that want the library and nothing else. Those want
+# different defaults — a checkout wants the tests, a consumer does not — and
+# making every consumer switch them off by hand is the dependency-management
+# smell this block exists to remove.
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    set(TEXERE_IS_TOP_LEVEL ON)
+else()
+    set(TEXERE_IS_TOP_LEVEL OFF)
+endif()
+
+option(TEXERE_BUILD_TESTS      "Build unit tests"   ${TEXERE_IS_TOP_LEVEL})
+option(TEXERE_BUILD_TOOLS      "Build the txt command-line tools" ${TEXERE_IS_TOP_LEVEL})
 option(TEXERE_BUILD_BENCHMARKS "Build benchmarks"   OFF)
 option(TEXERE_USE_SIMDUTF      "Use simdutf for fast UTF-8 validation"  ON)
 option(TEXERE_USE_UNIALGO      "Use uni-algo for Unicode algorithms"     ON)

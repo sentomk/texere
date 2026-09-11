@@ -190,6 +190,12 @@ cmake --build build
 ctest --test-dir build -V
 ```
 
+`TEXERE_BUILD_TESTS` and `TEXERE_BUILD_TOOLS` default to `ON` only when texere
+*is* the top-level project. Embedded through `add_subdirectory` or
+`FetchContent` they default to `OFF`, so a consumer does not have to switch
+them off by hand. The functional options (`TEXERE_USE_SIMDUTF`,
+`TEXERE_USE_UNIALGO`, `TEXERE_USE_FMT`) keep their published defaults in both
+cases: turning one off silently would change behaviour, not just build time.
 ```
 
 ---
