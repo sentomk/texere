@@ -7,7 +7,7 @@ endif()
 project(texere
     VERSION      0.1.0
     DESCRIPTION  "Unicode-safe UTF-8 string library for C++17"
-    HOMEPAGE_URL "https://github.com/yourorg/texere"
+    HOMEPAGE_URL "https://github.com/sentomk/texere"
     LANGUAGES    CXX
 )
 

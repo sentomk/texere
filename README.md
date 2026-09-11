@@ -161,7 +161,7 @@ set(TEXERE_USE_FMT ON CACHE BOOL "" FORCE)
 
 include(FetchContent)
 FetchContent_Declare(texere
-    GIT_REPOSITORY https://github.com/yourorg/texere.git
+    GIT_REPOSITORY https://github.com/sentomk/texere.git
     GIT_TAG        v0.1.0
     GIT_SHALLOW    TRUE
 )
