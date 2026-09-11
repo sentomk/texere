@@ -139,7 +139,13 @@ fmt::print("Hello, {}! Length is {}.
 | [uni-algo](https://github.com/uni-algo/uni-algo) | `TEXERE_USE_UNIALGO=ON` (default) | Unicode algorithms (normalization, case, grapheme boundaries) |
 | [{fmt}](https://github.com/fmtlib/fmt) | `TEXERE_USE_FMT=OFF` (default) | Formatting support |
 
-All dependencies are fetched automatically via CMake FetchContent; no manual installation required.
+Each optional dependency is looked for with `find_package` first and only
+downloaded when it is missing, so a project that already has the package —
+vcpkg, Conan, a distribution package — configures with no network access at
+all. Configure with `-DFETCHCONTENT_FULLY_DISCONNECTED=ON` to forbid downloads
+outright: a missing dependency is then an error naming it, not a surprise
+clone. Turning an option above to `OFF` drops the dependency instead, which is
+what `simdutf` and `uni-algo` have built-in fallbacks for.
 
 ---
 
@@ -155,7 +161,7 @@ set(TEXERE_USE_FMT ON CACHE BOOL "" FORCE)
 
 include(FetchContent)
 FetchContent_Declare(texere
-    GIT_REPOSITORY https://github.com/yourorg/texere.git
+    GIT_REPOSITORY https://github.com/sentomk/texere.git
     GIT_TAG        v0.1.0
     GIT_SHALLOW    TRUE
 )
@@ -171,6 +177,12 @@ find_package(texere REQUIRED)
 target_link_libraries(my_target PRIVATE texere::texere)
 ```
 
+texere is a static library, so the dependencies it was compiled against are
+part of its link interface. The installed package finds them itself
+(`find_dependency` in `texere-config.cmake`), and they must be installed
+alongside it — the build that produced the package records which ones were
+enabled.
+
 ### Build Options
 
 ```bash
@@ -181,6 +193,14 @@ cmake -B build \
   -DTEXERE_USE_UNIALGO=ON
 cmake --build build
 ctest --test-dir build -V
+```
+
+`TEXERE_BUILD_TESTS` and `TEXERE_BUILD_TOOLS` default to `ON` only when texere
+*is* the top-level project. Embedded through `add_subdirectory` or
+`FetchContent` they default to `OFF`, so a consumer does not have to switch
+them off by hand. The functional options (`TEXERE_USE_SIMDUTF`,
+`TEXERE_USE_UNIALGO`, `TEXERE_USE_FMT`) keep their published defaults in both
+cases: turning one off silently would change behaviour, not just build time.
 ```
 
 ---

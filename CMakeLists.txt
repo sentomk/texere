@@ -7,7 +7,7 @@ endif()
 project(texere
     VERSION      0.1.0
     DESCRIPTION  "Unicode-safe UTF-8 string library for C++17"
-    HOMEPAGE_URL "https://github.com/yourorg/texere"
+    HOMEPAGE_URL "https://github.com/sentomk/texere"
     LANGUAGES    CXX
 )
 
@@ -26,44 +26,103 @@ endif()
 # ============================================================================
 # Options
 # ============================================================================
-option(TEXERE_BUILD_TESTS      "Build unit tests"   ON)
-option(TEXERE_BUILD_TOOLS      "Build the txt command-line tools" ON)
+# texere is built two ways: as its own project by its maintainers, and as a
+# subproject by consumers that want the library and nothing else. Those want
+# different defaults — a checkout wants the tests, a consumer does not — and
+# making every consumer switch them off by hand is the dependency-management
+# smell this block exists to remove.
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    set(TEXERE_IS_TOP_LEVEL ON)
+else()
+    set(TEXERE_IS_TOP_LEVEL OFF)
+endif()
+
+option(TEXERE_BUILD_TESTS      "Build unit tests"   ${TEXERE_IS_TOP_LEVEL})
+option(TEXERE_BUILD_TOOLS      "Build the txt command-line tools" ${TEXERE_IS_TOP_LEVEL})
 option(TEXERE_BUILD_BENCHMARKS "Build benchmarks"   OFF)
 option(TEXERE_USE_SIMDUTF      "Use simdutf for fast UTF-8 validation"  ON)
 option(TEXERE_USE_UNIALGO      "Use uni-algo for Unicode algorithms"     ON)
 option(TEXERE_USE_FMT          "Use {fmt} for formatting support"        OFF)
 
 # ============================================================================
-# FetchContent dependencies
+# Dependencies
+#
+# Every optional dependency is looked for first and downloaded only when it is
+# missing. A consumer that already has the package — vcpkg, Conan, a distro —
+# therefore configures with no network access at all, and one that forbids
+# downloads (FETCHCONTENT_FULLY_DISCONNECTED=ON) gets a sentence saying what to
+# do instead of a surprise clone. The version pins live here, next to the only
+# place that needs them.
 # ============================================================================
-include(FetchContent)
+
+# "Neither find_package nor FetchContent produced it" needs a better sentence
+# than the one CMake reaches for: the missing target otherwise surfaces at
+# generate time as "there is a typo in the target name", which is a poor thing
+# to read three projects down a dependency chain.
+function(texere_dependency_missing package_name option_name remedy)
+    message(FATAL_ERROR
+        "${package_name} is required by ${option_name}=ON but is not available: "
+        "find_package did not find it and FetchContent did not populate it. Install "
+        "it (for example \`vcpkg install ${package_name}\`), put its prefix on "
+        "CMAKE_PREFIX_PATH, or configure with -D${option_name}=OFF ${remedy}.")
+endfunction()
 
 if(TEXERE_USE_SIMDUTF)
-    set(SIMDUTF_TESTS OFF CACHE BOOL "Disable simdutf upstream tests in FetchContent builds" FORCE)
-    FetchContent_Declare(simdutf
-        GIT_REPOSITORY https://github.com/simdutf/simdutf.git
-        GIT_TAG        v5.2.8
-        GIT_SHALLOW    TRUE
-    )
-    FetchContent_MakeAvailable(simdutf)
+    find_package(simdutf CONFIG QUIET)
+    if(NOT simdutf_FOUND)
+        # simdutf's own tests and tools are not ours to build, and this is
+        # where those knobs belong: texere is what pulls simdutf in. Its `sutf`
+        # tool has to stay out in particular — its iconv probe picks up msys2's
+        # mingw headers on Windows and contaminates an MSVC-ABI compile, which
+        # is a bizarre failure to debug from three projects away.
+        set(SIMDUTF_TESTS OFF CACHE BOOL "" FORCE)
+        set(SIMDUTF_TOOLS OFF CACHE BOOL "" FORCE)
+        include(FetchContent)
+        FetchContent_Declare(simdutf
+            GIT_REPOSITORY https://github.com/simdutf/simdutf.git
+            GIT_TAG        v5.2.8
+            GIT_SHALLOW    TRUE
+        )
+        FetchContent_MakeAvailable(simdutf)
+    endif()
+    if(NOT TARGET simdutf::simdutf)
+        texere_dependency_missing(simdutf TEXERE_USE_SIMDUTF
+            "to use the built-in validator, which is exact but scalar")
+    endif()
 endif()
 
 if(TEXERE_USE_UNIALGO)
-    FetchContent_Declare(uni_algo
-        GIT_REPOSITORY https://github.com/uni-algo/uni-algo.git
-        GIT_TAG        v1.2.0
-        GIT_SHALLOW    TRUE
-    )
-    FetchContent_MakeAvailable(uni_algo)
+    find_package(uni-algo CONFIG QUIET)
+    if(NOT uni-algo_FOUND)
+        include(FetchContent)
+        FetchContent_Declare(uni_algo
+            GIT_REPOSITORY https://github.com/uni-algo/uni-algo.git
+            GIT_TAG        v1.2.0
+            GIT_SHALLOW    TRUE
+        )
+        FetchContent_MakeAvailable(uni_algo)
+    endif()
+    if(NOT TARGET uni-algo::uni-algo)
+        texere_dependency_missing(uni-algo TEXERE_USE_UNIALGO
+            "to use the built-in segmentation heuristic, which is coarser")
+    endif()
 endif()
 
 if(TEXERE_USE_FMT)
-    FetchContent_Declare(fmt
-        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-        GIT_TAG        10.2.1
-        GIT_SHALLOW    TRUE
-    )
-    FetchContent_MakeAvailable(fmt)
+    find_package(fmt CONFIG QUIET)
+    if(NOT fmt_FOUND)
+        include(FetchContent)
+        FetchContent_Declare(fmt
+            GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+            GIT_TAG        10.2.1
+            GIT_SHALLOW    TRUE
+        )
+        FetchContent_MakeAvailable(fmt)
+    endif()
+    if(NOT TARGET fmt::fmt)
+        texere_dependency_missing(fmt TEXERE_USE_FMT
+            "to leave txt::format behind")
+    endif()
 endif()
 
 # ============================================================================
@@ -81,17 +140,23 @@ target_include_directories(texere PUBLIC
 target_compile_features(texere PUBLIC cxx_std_17)
 
 # Optional dependency linkage
+# Link interfaces. No public header mentions simdutf or uni-algo, so those
+# stay PRIVATE — but texere is a *static* library, and the objects it compiled
+# against them sit inside the archive. CMake records a static library's
+# private dependencies as LINK_ONLY in its interface, which is exactly right:
+# consumers link them, and inherit neither include directories nor defines.
+# Wrapping them in $<BUILD_INTERFACE:> instead would strip them from the
+# installed target and leave the consumer with undefined symbols.
+#
+# fmt is different: include/texere/format.hpp includes <fmt/core.h> behind a
+# PUBLIC define, so it is part of texere's public surface.
 if(TEXERE_USE_SIMDUTF)
-    target_link_libraries(texere PRIVATE
-        $<BUILD_INTERFACE:simdutf>
-    )
+    target_link_libraries(texere PRIVATE simdutf::simdutf)
     target_compile_definitions(texere PRIVATE TEXERE_HAS_SIMDUTF=1)
 endif()
 
 if(TEXERE_USE_UNIALGO)
-    target_link_libraries(texere PRIVATE
-        $<BUILD_INTERFACE:uni-algo::uni-algo>
-    )
+    target_link_libraries(texere PRIVATE uni-algo::uni-algo)
     target_compile_definitions(texere PRIVATE TEXERE_HAS_UNIALGO=1)
 endif()
 
