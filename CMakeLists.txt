@@ -140,17 +140,23 @@ target_include_directories(texere PUBLIC
 target_compile_features(texere PUBLIC cxx_std_17)
 
 # Optional dependency linkage
+# Link interfaces. No public header mentions simdutf or uni-algo, so those
+# stay PRIVATE — but texere is a *static* library, and the objects it compiled
+# against them sit inside the archive. CMake records a static library's
+# private dependencies as LINK_ONLY in its interface, which is exactly right:
+# consumers link them, and inherit neither include directories nor defines.
+# Wrapping them in $<BUILD_INTERFACE:> instead would strip them from the
+# installed target and leave the consumer with undefined symbols.
+#
+# fmt is different: include/texere/format.hpp includes <fmt/core.h> behind a
+# PUBLIC define, so it is part of texere's public surface.
 if(TEXERE_USE_SIMDUTF)
-    target_link_libraries(texere PRIVATE
-        $<BUILD_INTERFACE:simdutf::simdutf>
-    )
+    target_link_libraries(texere PRIVATE simdutf::simdutf)
     target_compile_definitions(texere PRIVATE TEXERE_HAS_SIMDUTF=1)
 endif()
 
 if(TEXERE_USE_UNIALGO)
-    target_link_libraries(texere PRIVATE
-        $<BUILD_INTERFACE:uni-algo::uni-algo>
-    )
+    target_link_libraries(texere PRIVATE uni-algo::uni-algo)
     target_compile_definitions(texere PRIVATE TEXERE_HAS_UNIALGO=1)
 endif()
 

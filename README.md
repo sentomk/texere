@@ -177,6 +177,11 @@ find_package(texere REQUIRED)
 target_link_libraries(my_target PRIVATE texere::texere)
 ```
 
+texere is a static library, so the dependencies it was compiled against are
+part of its link interface. The installed package finds them itself
+(`find_dependency` in `texere-config.cmake`), and they must be installed
+alongside it — the build that produced the package records which ones were
+enabled.
 
 ### Build Options
 
