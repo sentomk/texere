@@ -34,36 +34,84 @@ option(TEXERE_USE_UNIALGO      "Use uni-algo for Unicode algorithms"     ON)
 option(TEXERE_USE_FMT          "Use {fmt} for formatting support"        OFF)
 
 # ============================================================================
-# FetchContent dependencies
+# Dependencies
+#
+# Every optional dependency is looked for first and downloaded only when it is
+# missing. A consumer that already has the package — vcpkg, Conan, a distro —
+# therefore configures with no network access at all, and one that forbids
+# downloads (FETCHCONTENT_FULLY_DISCONNECTED=ON) gets a sentence saying what to
+# do instead of a surprise clone. The version pins live here, next to the only
+# place that needs them.
 # ============================================================================
-include(FetchContent)
+
+# "Neither find_package nor FetchContent produced it" needs a better sentence
+# than the one CMake reaches for: the missing target otherwise surfaces at
+# generate time as "there is a typo in the target name", which is a poor thing
+# to read three projects down a dependency chain.
+function(texere_dependency_missing package_name option_name remedy)
+    message(FATAL_ERROR
+        "${package_name} is required by ${option_name}=ON but is not available: "
+        "find_package did not find it and FetchContent did not populate it. Install "
+        "it (for example \`vcpkg install ${package_name}\`), put its prefix on "
+        "CMAKE_PREFIX_PATH, or configure with -D${option_name}=OFF ${remedy}.")
+endfunction()
 
 if(TEXERE_USE_SIMDUTF)
-    set(SIMDUTF_TESTS OFF CACHE BOOL "Disable simdutf upstream tests in FetchContent builds" FORCE)
-    FetchContent_Declare(simdutf
-        GIT_REPOSITORY https://github.com/simdutf/simdutf.git
-        GIT_TAG        v5.2.8
-        GIT_SHALLOW    TRUE
-    )
-    FetchContent_MakeAvailable(simdutf)
+    find_package(simdutf CONFIG QUIET)
+    if(NOT simdutf_FOUND)
+        # simdutf's own tests and tools are not ours to build, and this is
+        # where those knobs belong: texere is what pulls simdutf in. Its `sutf`
+        # tool has to stay out in particular — its iconv probe picks up msys2's
+        # mingw headers on Windows and contaminates an MSVC-ABI compile, which
+        # is a bizarre failure to debug from three projects away.
+        set(SIMDUTF_TESTS OFF CACHE BOOL "" FORCE)
+        set(SIMDUTF_TOOLS OFF CACHE BOOL "" FORCE)
+        include(FetchContent)
+        FetchContent_Declare(simdutf
+            GIT_REPOSITORY https://github.com/simdutf/simdutf.git
+            GIT_TAG        v5.2.8
+            GIT_SHALLOW    TRUE
+        )
+        FetchContent_MakeAvailable(simdutf)
+    endif()
+    if(NOT TARGET simdutf::simdutf)
+        texere_dependency_missing(simdutf TEXERE_USE_SIMDUTF
+            "to use the built-in validator, which is exact but scalar")
+    endif()
 endif()
 
 if(TEXERE_USE_UNIALGO)
-    FetchContent_Declare(uni_algo
-        GIT_REPOSITORY https://github.com/uni-algo/uni-algo.git
-        GIT_TAG        v1.2.0
-        GIT_SHALLOW    TRUE
-    )
-    FetchContent_MakeAvailable(uni_algo)
+    find_package(uni-algo CONFIG QUIET)
+    if(NOT uni-algo_FOUND)
+        include(FetchContent)
+        FetchContent_Declare(uni_algo
+            GIT_REPOSITORY https://github.com/uni-algo/uni-algo.git
+            GIT_TAG        v1.2.0
+            GIT_SHALLOW    TRUE
+        )
+        FetchContent_MakeAvailable(uni_algo)
+    endif()
+    if(NOT TARGET uni-algo::uni-algo)
+        texere_dependency_missing(uni-algo TEXERE_USE_UNIALGO
+            "to use the built-in segmentation heuristic, which is coarser")
+    endif()
 endif()
 
 if(TEXERE_USE_FMT)
-    FetchContent_Declare(fmt
-        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-        GIT_TAG        10.2.1
-        GIT_SHALLOW    TRUE
-    )
-    FetchContent_MakeAvailable(fmt)
+    find_package(fmt CONFIG QUIET)
+    if(NOT fmt_FOUND)
+        include(FetchContent)
+        FetchContent_Declare(fmt
+            GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+            GIT_TAG        10.2.1
+            GIT_SHALLOW    TRUE
+        )
+        FetchContent_MakeAvailable(fmt)
+    endif()
+    if(NOT TARGET fmt::fmt)
+        texere_dependency_missing(fmt TEXERE_USE_FMT
+            "to leave txt::format behind")
+    endif()
 endif()
 
 # ============================================================================
@@ -83,7 +131,7 @@ target_compile_features(texere PUBLIC cxx_std_17)
 # Optional dependency linkage
 if(TEXERE_USE_SIMDUTF)
     target_link_libraries(texere PRIVATE
-        $<BUILD_INTERFACE:simdutf>
+        $<BUILD_INTERFACE:simdutf::simdutf>
     )
     target_compile_definitions(texere PRIVATE TEXERE_HAS_SIMDUTF=1)
 endif()

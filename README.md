@@ -139,7 +139,13 @@ fmt::print("Hello, {}! Length is {}.
 | [uni-algo](https://github.com/uni-algo/uni-algo) | `TEXERE_USE_UNIALGO=ON` (default) | Unicode algorithms (normalization, case, grapheme boundaries) |
 | [{fmt}](https://github.com/fmtlib/fmt) | `TEXERE_USE_FMT=OFF` (default) | Formatting support |
 
-All dependencies are fetched automatically via CMake FetchContent; no manual installation required.
+Each optional dependency is looked for with `find_package` first and only
+downloaded when it is missing, so a project that already has the package —
+vcpkg, Conan, a distribution package — configures with no network access at
+all. Configure with `-DFETCHCONTENT_FULLY_DISCONNECTED=ON` to forbid downloads
+outright: a missing dependency is then an error naming it, not a surprise
+clone. Turning an option above to `OFF` drops the dependency instead, which is
+what `simdutf` and `uni-algo` have built-in fallbacks for.
 
 ---
 
@@ -171,6 +177,7 @@ find_package(texere REQUIRED)
 target_link_libraries(my_target PRIVATE texere::texere)
 ```
 
+
 ### Build Options
 
 ```bash
@@ -181,6 +188,8 @@ cmake -B build \
   -DTEXERE_USE_UNIALGO=ON
 cmake --build build
 ctest --test-dir build -V
+```
+
 ```
 
 ---
